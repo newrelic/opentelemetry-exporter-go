@@ -38,11 +38,10 @@ func NewExporter(serviceName, apiKey string, options ...func(*telemetry.Config))
 	if nil != err {
 		return nil, err
 	}
-	e := &Exporter{
+	return &Exporter{
 		harvester:   h,
 		serviceName: serviceName,
-	}
-	return e, nil
+	}, nil
 }
 
 var (
