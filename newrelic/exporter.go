@@ -23,7 +23,6 @@ type Exporter struct {
 	harvester *telemetry.Harvester
 	// serviceName is the name of this service or application.
 	serviceName string
-	ignoreCodes map[uint32]struct{}
 }
 
 // NewExporter creates a new Exporter that exports spans to New Relic.
@@ -43,21 +42,7 @@ func NewExporter(serviceName, apiKey string, options ...func(*telemetry.Config))
 		harvester:   h,
 		serviceName: serviceName,
 	}
-	e.SetIgnoredStatusCodes(5)
 	return e, nil
-}
-
-// SetIgnoredStatusCodes controls which SpanData.Status
-// (https://godoc.org/google.golang.org/grpc/codes) codes are turned into errors
-// on Spans.  Any Status greater than zero is considered an error if it is not
-// set here.  The default initialization ignores 5 (NOT_FOUND).  NOTE:  This
-// list of codes is not mutex protected, and therefore this must be used
-// prior to registering the exporter.
-func (e *Exporter) SetIgnoredStatusCodes(codes ...uint32) {
-	e.ignoreCodes = make(map[uint32]struct{}, len(codes))
-	for _, c := range codes {
-		e.ignoreCodes[c] = struct{}{}
-	}
 }
 
 var (
@@ -81,9 +66,6 @@ func (e *Exporter) ExportSpan(ctx context.Context, span *trace.SpanData) {
 
 func (e *Exporter) responseCodeIsError(code uint32) bool {
 	if code == 0 {
-		return false
-	}
-	if _, ok := e.ignoreCodes[code]; ok {
 		return false
 	}
 	return true
