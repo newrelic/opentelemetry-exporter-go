@@ -71,6 +71,9 @@ func (e *Exporter) ExportSpans(ctx context.Context, spans []*trace.SpanData) {
 
 // ExportSpan exports a span to New Relic.
 func (e *Exporter) ExportSpan(ctx context.Context, span *trace.SpanData) {
+	if nil == e {
+		return
+	}
 	e.harvester.RecordSpan(e.transformSpan(span))
 }
 
