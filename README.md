@@ -7,6 +7,15 @@ only traces are supported.
 Example use:
 
 ```go
+import (
+	"log"
+	"os"
+
+	"github.com/newrelic/newrelic-opentelemetry-exporter-go/newrelic"
+	"go.opentelemetry.io/otel/api/global"
+	"go.opentelemetry.io/otel/sdk/trace"
+)
+
 func initTracer() {
 	exporter, err := newrelic.NewExporter("My Service", os.Getenv("NEW_RELIC_API_KEY"))
 	if err != nil {
