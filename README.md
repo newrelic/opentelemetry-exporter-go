@@ -1,7 +1,24 @@
 # New Relic Go OpenTelemetry Exporter [![GoDoc](https://godoc.org/github.com/newrelic/newrelic-opentelemetry-exporter-go/newrelic?status.svg)](https://godoc.org/github.com/newrelic/newrelic-opentelemetry-exporter-go/newrelic)
 
-The `newrelic` package provides an exporter for sending OpenTelemetry traces to
-New Relic.
+The `"github.com/newrelic/newrelic-opentelemetry-exporter-go/newrelic"` package
+provides an exporter for sending OpenTelemetry data to New Relic.  Currently,
+only traces are supported.
+
+Example use:
+
+```go
+func initTracer() {
+	exporter, err := newrelic.NewExporter("My Service", os.Getenv("NEW_RELIC_API_KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	tp, err := trace.NewProvider(trace.WithSyncer(exporter))
+	if err != nil {
+		log.Fatal(err)
+	}
+	global.SetTraceProvider(tp)
+}
+```
 
 ## Licensing
 The New Relic Go OpenTelemetry exporter is licensed under the Apache 2.0 License.
