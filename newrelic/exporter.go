@@ -7,6 +7,7 @@ package newrelic
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/api/core"
@@ -28,8 +29,15 @@ type Exporter struct {
 	serviceName string
 }
 
+var (
+	errServiceNameEmpty = errors.New("service name is required")
+)
+
 // NewExporter creates a new Exporter that exports spans to New Relic.
 func NewExporter(serviceName, apiKey string, options ...func(*telemetry.Config)) (*Exporter, error) {
+	if serviceName == "" {
+		return nil, errServiceNameEmpty
+	}
 	options = append([]func(*telemetry.Config){
 		func(cfg *telemetry.Config) {
 			cfg.Product = userAgentProduct
