@@ -81,12 +81,14 @@ func transformSpanID(id core.SpanID) string {
 }
 
 func (e *Exporter) makeAttributes(span *trace.SpanData) map[string]interface{} {
-	attributes := make(map[string]interface{}, len(span.Attributes)+1)
+	attributes := make(map[string]interface{}, len(span.Attributes)+3)
 	for _, pair := range span.Attributes {
 		attributes[string(pair.Key)] = pair.Value.AsInterface()
 	}
 
-	if e.responseCodeIsError(uint32(span.Status)) {
+	if code := uint32(span.Status); e.responseCodeIsError(code) {
+		attributes["error"] = true
+		attributes["error.code"] = code
 		attributes["error.message"] = span.Status.String()
 	}
 
