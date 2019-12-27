@@ -92,17 +92,23 @@ func transformSpanID(id core.SpanID) string {
 }
 
 func (e *Exporter) makeAttributes(span *trace.SpanData) map[string]interface{} {
-	attributes := make(map[string]interface{}, len(span.Attributes)+3)
+	isError := e.responseCodeIsError(uint32(span.Status))
+	numAttrs := len(span.Attributes)
+	if isError {
+		numAttrs += 2
+	}
+	if 0 == numAttrs {
+		return nil
+	}
+	attrs := make(map[string]interface{}, numAttrs)
 	for _, pair := range span.Attributes {
-		attributes[string(pair.Key)] = pair.Value.AsInterface()
+		attrs[string(pair.Key)] = pair.Value.AsInterface()
 	}
-
-	if code := uint32(span.Status); e.responseCodeIsError(code) {
-		attributes["error.code"] = code
-		attributes["error.message"] = span.Status.String()
+	if isError {
+		attrs["error.code"] = uint32(span.Status)
+		attrs["error.message"] = span.Status.String()
 	}
-
-	return attributes
+	return attrs
 }
 
 // https://godoc.org/github.com/newrelic/newrelic-telemetry-sdk-go/telemetry#Span
