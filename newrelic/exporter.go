@@ -95,7 +95,6 @@ func (e *Exporter) makeAttributes(span *trace.SpanData) map[string]interface{} {
 	}
 
 	if code := uint32(span.Status); e.responseCodeIsError(code) {
-		attributes["error"] = true
 		attributes["error.code"] = code
 		attributes["error.message"] = span.Status.String()
 	}
