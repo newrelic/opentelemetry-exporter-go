@@ -10,6 +10,11 @@ import (
 	"go.opentelemetry.io/otel/sdk/export/trace"
 )
 
+const (
+	version          = "0.1.0"
+	userAgentProduct = "NewRelic-Go-OpenTelemetry"
+)
+
 // Java implementation:
 // https://github.com/newrelic/newrelic-opentelemetry-java-exporters/tree/master/src/main/java/com/newrelic/telemetry/opentelemetry/export
 
@@ -18,25 +23,24 @@ type Exporter struct {
 	harvester *telemetry.Harvester
 	// serviceName is the name of this service or application.
 	serviceName string
-	// IgnoreStatusCodes controls which SpanData.Status
-	// (https://godoc.org/google.golang.org/grpc/codes) codes are turned into
-	// errors on Spans.  A Span with a Status greater than 0 that is not
-	// in this slice will be marked as an error.  When instantiated with
-	// NewExporter this field defaults to only include 5 (NOT_FOUND).
-	IgnoreStatusCodes []uint32
 }
 
 // NewExporter creates a new Exporter that exports spans to New Relic.
 func NewExporter(serviceName, apiKey string, options ...func(*telemetry.Config)) (*Exporter, error) {
-	options = append([]func(*telemetry.Config){telemetry.ConfigAPIKey(apiKey)}, options...)
+	options = append([]func(*telemetry.Config){
+		func(cfg *telemetry.Config) {
+			cfg.Product = userAgentProduct
+			cfg.ProductVersion = version
+		},
+		telemetry.ConfigAPIKey(apiKey),
+	}, options...)
 	h, err := telemetry.NewHarvester(options...)
 	if nil != err {
 		return nil, err
 	}
 	return &Exporter{
-		harvester:         h,
-		serviceName:       serviceName,
-		IgnoreStatusCodes: []uint32{5},
+		harvester:   h,
+		serviceName: serviceName,
 	}, nil
 }
 
@@ -62,11 +66,6 @@ func (e *Exporter) ExportSpan(ctx context.Context, span *trace.SpanData) {
 func (e *Exporter) responseCodeIsError(code uint32) bool {
 	if code == 0 {
 		return false
-	}
-	for _, ignoreCode := range e.IgnoreStatusCodes {
-		if code == ignoreCode {
-			return false
-		}
 	}
 	return true
 }
