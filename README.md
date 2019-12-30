@@ -1,6 +1,6 @@
-# New Relic Go OpenTelemetry Exporter [![GoDoc](https://godoc.org/github.com/newrelic/newrelic-opentelemetry-exporter-go/newrelic?status.svg)](https://godoc.org/github.com/newrelic/newrelic-opentelemetry-exporter-go/newrelic)
+# New Relic Go OpenTelemetry Exporter [![GoDoc](https://godoc.org/github.com/newrelic/opentelemetry-exporter-go/newrelic?status.svg)](https://godoc.org/github.com/newrelic/opentelemetry-exporter-go/newrelic)
 
-The `"github.com/newrelic/newrelic-opentelemetry-exporter-go/newrelic"` package
+The `"github.com/newrelic/opentelemetry-exporter-go/newrelic"` package
 provides an exporter for sending OpenTelemetry data to New Relic.  Currently,
 only traces are supported.
 
@@ -11,7 +11,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/newrelic/newrelic-opentelemetry-exporter-go/newrelic"
+	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
 	"go.opentelemetry.io/otel/api/global"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
