@@ -33,8 +33,8 @@ func initTracer() {
 This exporter is built with the alpha release of Open Telemetry Go client. Due
 to the rapid development of Open Telemetry, this exporter does not guarantee
 compatibility with future releases of the Open Telemetry APIs.  Additionally,
-this exporter may have backwards incompatible changes introduced without a major
-version increment.  We will strive to ensure compatibility when a stable release
+this exporter may introduce changes that are not backwards compatible without a major
+version increment.  We will strive to ensure backwards compatibility when a stable version
 of the Open Telemetry Go client is released.
 
 ## Licensing
