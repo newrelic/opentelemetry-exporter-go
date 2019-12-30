@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/newrelic/newrelic-opentelemetry-exporter-go/newrelic"
+	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
 	"go.opentelemetry.io/otel/api/global"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
