@@ -30,12 +30,12 @@ func initTracer() {
 ```
 
 ## Disclaimer
-This exporter is built with the alpha release of Open Telemetry Go client. Due
-to the rapid development of Open Telemetry, this exporter does not guarantee
-compatibility with future releases of the Open Telemetry APIs.  Additionally,
+This exporter is built with the alpha release of OpenTelemetry Go client. Due
+to the rapid development of OpenTelemetry, this exporter does not guarantee
+compatibility with future releases of the OpenTelemetry APIs.  Additionally,
 this exporter may introduce changes that are not backwards compatible without a major
 version increment.  We will strive to ensure backwards compatibility when a stable version
-of the Open Telemetry Go client is released.
+of the OpenTelemetry Go client is released.
 
 ## Licensing
 The New Relic Go OpenTelemetry exporter is licensed under the Apache 2.0 License.
