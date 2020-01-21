@@ -13,7 +13,7 @@ import (
 
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
 	"go.opentelemetry.io/otel/api/global"
-	"go.opentelemetry.io/otel/sdk/trace"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 func initTracer() {
@@ -21,7 +21,8 @@ func initTracer() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tp, err := trace.NewProvider(trace.WithSyncer(exporter))
+	tp, err := sdktrace.NewProvider(sdktrace.WithConfig(sdktrace.Config{DefaultSampler: sdktrace.AlwaysSample()}),
+	        sdktrace.WithSyncer(exporter))
 	if err != nil {
 		log.Fatal(err)
 	}
