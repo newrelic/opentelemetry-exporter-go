@@ -17,6 +17,15 @@ import (
 const (
 	version          = "0.1.0"
 	userAgentProduct = "NewRelic-Go-OpenTelemetry"
+
+	errorCodeAttrKey    = "error.code"
+	errorMessageAttrKey = "error.message"
+
+	instrumentationProviderAttrKey   = "instrumentation.provider"
+	instrumentationProviderAttrValue = "opentelemetry"
+
+	collectorNameAttrKey   = "collector.name"
+	collectorNameAttrValue = "newrelic-opentelemetry-exporter"
 )
 
 // Java implementation:
@@ -93,7 +102,7 @@ func transformSpanID(id core.SpanID) string {
 
 func (e *Exporter) makeAttributes(span *trace.SpanData) map[string]interface{} {
 	isError := e.responseCodeIsError(uint32(span.Status))
-	numAttrs := len(span.Attributes)
+	numAttrs := len(span.Attributes) + 2
 	if isError {
 		numAttrs += 2
 	}
@@ -104,9 +113,11 @@ func (e *Exporter) makeAttributes(span *trace.SpanData) map[string]interface{} {
 	for _, pair := range span.Attributes {
 		attrs[string(pair.Key)] = pair.Value.AsInterface()
 	}
+	attrs[instrumentationProviderAttrKey] = instrumentationProviderAttrValue
+	attrs[collectorNameAttrKey] = collectorNameAttrValue
 	if isError {
-		attrs["error.code"] = uint32(span.Status)
-		attrs["error.message"] = span.Status.String()
+		attrs[errorCodeAttrKey] = uint32(span.Status)
+		attrs[errorMessageAttrKey] = span.Status.String()
 	}
 	return attrs
 }
