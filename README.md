@@ -39,7 +39,7 @@ of the OpenTelemetry Go client is released.
 
 ## Find and use your data
 
-For tips on how to find and query your data, see [Find trace/span data](https://docs.newrelic.com/docs/understand-dependencies/distributed-tracing/trace-api/introduction-trace-api#view-data).
+For tips on how to find and query your data in New Relic, see [Find trace/span data](https://docs.newrelic.com/docs/understand-dependencies/distributed-tracing/trace-api/introduction-trace-api#view-data).
 
 
 For general querying information, see:
