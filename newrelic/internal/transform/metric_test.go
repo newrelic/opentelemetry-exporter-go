@@ -1,14 +1,20 @@
 package transform
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/api/core"
+	"go.opentelemetry.io/otel/api/metric"
 	metricapi "go.opentelemetry.io/otel/api/metric"
 	"go.opentelemetry.io/otel/api/unit"
 	metricsdk "go.opentelemetry.io/otel/sdk/export/metric"
+	"go.opentelemetry.io/otel/sdk/metric/aggregator/minmaxsumcount"
+	sumAgg "go.opentelemetry.io/otel/sdk/metric/aggregator/sum"
 	"go.opentelemetry.io/otel/sdk/resource"
 )
 
@@ -136,5 +142,128 @@ func TestLabelAttributes(t *testing.T) {
 		if !reflect.DeepEqual(got, expected) {
 			t.Errorf("labels test %d: %#v != %#v", i, got, expected)
 		}
+	}
+}
+
+var numKinds = []core.NumberKind{core.Int64NumberKind, core.Uint64NumberKind, core.Float64NumberKind}
+
+func TestMinMaxSumCountRecord(t *testing.T) {
+	name := "test-mmsc"
+	l := metricsdk.NewLabels(metricsdk.LabelSlice{}, "", nil)
+	for _, iKind := range []metric.Kind{metric.MeasureKind, metric.ObserverKind} {
+		for _, nKind := range numKinds {
+			desc := metric.NewDescriptor(name, iKind, nKind)
+			mmsc := minmaxsumcount.New(&desc)
+
+			var n core.Number
+			switch nKind {
+			case core.Int64NumberKind:
+				n = core.NewInt64Number(1)
+			case core.Uint64NumberKind:
+				n = core.NewUint64Number(1)
+			case core.Float64NumberKind:
+				n = core.NewFloat64Number(1)
+			}
+			if err := mmsc.Update(context.Background(), n, &desc); err != nil {
+				t.Fatal(err)
+			}
+			switch nKind {
+			case core.Int64NumberKind:
+				n = core.NewInt64Number(10)
+			case core.Uint64NumberKind:
+				n = core.NewUint64Number(10)
+			case core.Float64NumberKind:
+				n = core.NewFloat64Number(10)
+			}
+			if err := mmsc.Update(context.Background(), n, &desc); err != nil {
+				t.Fatal(err)
+			}
+
+			mmsc.Checkpoint(context.Background(), &desc)
+
+			m, err := Record("", metricsdk.NewRecord(&desc, l, mmsc))
+			if err != nil {
+				t.Fatalf("Record(MMSC,%s,%s) error: %v", nKind, iKind, err)
+			}
+			summary, ok := m.(telemetry.Summary)
+			if !ok {
+				t.Fatalf("Record(MMSC,%s,%s) did not return a Summary", nKind, iKind)
+			}
+			if got := summary.Name; got != name {
+				t.Errorf("Record(MMSC,%s,%s) name: got %q, want %q", nKind, iKind, got, name)
+			}
+			if want := float64(1); summary.Min != want {
+				t.Errorf("Record(MMSC,%s,%s) min: got %g, want %g", nKind, iKind, summary.Min, want)
+			}
+			if want := float64(10); summary.Max != want {
+				t.Errorf("Record(MMSC,%s,%s) max: got %g, want %g", nKind, iKind, summary.Max, want)
+			}
+			if want := float64(11); summary.Sum != want {
+				t.Errorf("Record(MMSC,%s,%s) sum: got %g, want %g", nKind, iKind, summary.Sum, want)
+			}
+			if want := float64(2); summary.Count != want {
+				t.Errorf("Record(MMSC,%s,%s) count: got %g, want %g", nKind, iKind, summary.Count, want)
+			}
+		}
+	}
+}
+
+func TestSumRecord(t *testing.T) {
+	name := "test-sum"
+	l := metricsdk.NewLabels(metricsdk.LabelSlice{}, "", nil)
+	for _, nKind := range numKinds {
+		desc := metric.NewDescriptor(name, metric.CounterKind, nKind)
+		s := sumAgg.New()
+
+		var n core.Number
+		switch nKind {
+		case core.Int64NumberKind:
+			n = core.NewInt64Number(2)
+		case core.Uint64NumberKind:
+			n = core.NewUint64Number(2)
+		case core.Float64NumberKind:
+			n = core.NewFloat64Number(2)
+		}
+		if err := s.Update(context.Background(), n, &desc); err != nil {
+			t.Fatal(err)
+		}
+
+		s.Checkpoint(context.Background(), &desc)
+		m, err := Record("", metricsdk.NewRecord(&desc, l, s))
+		if err != nil {
+			t.Fatalf("Record(SUM,%s) error: %v", nKind, err)
+		}
+		c, ok := m.(telemetry.Count)
+		if !ok {
+			t.Fatalf("Record(SUM,%s) did not return a Counter", nKind)
+		}
+		if got := c.Name; got != name {
+			t.Errorf("Record(SUM,%s) name: got %q, want %q", nKind, got, name)
+		}
+		if got := c.Name; got != name {
+			t.Errorf("Record(SUM) name: got %q, want %q", got, name)
+		}
+		if want := float64(2); c.Value != want {
+			t.Errorf("Record(SUM,%s) value: got %g, want %g", nKind, c.Value, want)
+		}
+	}
+}
+
+type fakeAgg struct{}
+
+func (a fakeAgg) Update(context.Context, core.Number, *metric.Descriptor) error { return nil }
+func (a fakeAgg) Checkpoint(context.Context, *metric.Descriptor)                {}
+func (a fakeAgg) Merge(metricsdk.Aggregator, *metric.Descriptor) error          { return nil }
+
+func TestErrUnimplementedAgg(t *testing.T) {
+	fa := fakeAgg{}
+	desc := metric.NewDescriptor("", metric.CounterKind, core.Int64NumberKind)
+	l := metricsdk.NewLabels(metricsdk.LabelSlice{}, "", nil)
+	_, err := Record("", metricsdk.NewRecord(&desc, l, fa))
+	if !errors.Is(err, ErrUnimplementedAgg) {
+		t.Errorf("unexpected error: %v", err)
+	}
+	if err == nil {
+		t.Error("did not get ErrUnimplementedAgg error response")
 	}
 }
