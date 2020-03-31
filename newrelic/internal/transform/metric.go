@@ -82,27 +82,45 @@ func minMaxSumCount(desc *metric.Descriptor, attrs map[string]interface{}, a agg
 }
 
 func attributes(service string, desc *metric.Descriptor, labels metricsdk.Labels) map[string]interface{} {
-	resAttrs := desc.Resource().Attributes()
 	iter := labels.Iter()
 
-	attrs := make(map[string]interface{}, 5+iter.Len()+len(resAttrs))
-
-	// TODO (MrAlias): Add desc.LibrayName information here added in v0.4.
-	// Should be sent as instrumentation.name and instrumentation.version attributes.
-	attrs["unit"] = string(desc.Unit())
-	attrs["description"] = desc.Description()
-
-	for _, kv := range resAttrs {
-		attrs[string(kv.Key)] = kv.Value.AsInterface()
+	// By default include New Relic attributes and all labels
+	n := 2 + iter.Len()
+	if desc != nil {
+		n += len(desc.Resource().Attributes())
+		if desc.Unit() != "" {
+			n++
+		}
+		if desc.Description() != "" {
+			n++
+		}
 	}
+	if service != "" {
+		n++
+	}
+	attrs := make(map[string]interface{}, n)
 
 	for iter.Next() {
 		kv := iter.Label()
 		attrs[string(kv.Key)] = kv.Value.AsInterface()
 	}
 
+	if desc != nil {
+		for _, kv := range desc.Resource().Attributes() {
+			attrs[string(kv.Key)] = kv.Value.AsInterface()
+		}
+		if desc.Unit() != "" {
+			attrs["unit"] = string(desc.Unit())
+		}
+		if desc.Description() != "" {
+			attrs["description"] = desc.Description()
+		}
+	}
+	if service != "" {
+		attrs[serviceNameAttrKey] = service
+	}
+
 	// New Relic registered attributes to identify where this data came from.
-	attrs[serviceNameAttrKey] = service
 	attrs[instrumentationProviderAttrKey] = instrumentationProviderAttrValue
 	attrs[collectorNameAttrKey] = collectorNameAttrValue
 
