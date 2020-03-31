@@ -181,7 +181,7 @@ func TestEndToEndTracer(t *testing.T) {
 
 	gotSpans := mockt.Spans()
 	if got := len(gotSpans); got != numSpans {
-		t.Errorf("expecting %d spans, got %d", numSpans, got)
+		t.Fatalf("expecting %d spans, got %d", numSpans, got)
 	}
 
 	var traceID, parentID string
