@@ -10,7 +10,8 @@ import (
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic/internal/transform"
-	"go.opentelemetry.io/otel/sdk/export/trace"
+	metricsdk "go.opentelemetry.io/otel/sdk/export/metric"
+	tracesdk "go.opentelemetry.io/otel/sdk/export/trace"
 )
 
 const (
@@ -55,23 +56,34 @@ func NewExporter(serviceName, apiKey string, options ...func(*telemetry.Config))
 }
 
 var (
-	_ interface {
-		trace.SpanSyncer
-		trace.SpanBatcher
-	} = &Exporter{}
+	_ tracesdk.SpanSyncer  = (*Exporter)(nil)
+	_ tracesdk.SpanBatcher = (*Exporter)(nil)
+	_ metricsdk.Exporter   = (*Exporter)(nil)
 )
 
 // ExportSpans exports multiple spans to New Relic.
-func (e *Exporter) ExportSpans(ctx context.Context, spans []*trace.SpanData) {
+func (e *Exporter) ExportSpans(ctx context.Context, spans []*tracesdk.SpanData) {
 	for _, s := range spans {
 		e.ExportSpan(ctx, s)
 	}
 }
 
 // ExportSpan exports a span to New Relic.
-func (e *Exporter) ExportSpan(ctx context.Context, span *trace.SpanData) {
+func (e *Exporter) ExportSpan(ctx context.Context, span *tracesdk.SpanData) {
 	if nil == e {
 		return
 	}
 	e.harvester.RecordSpan(transform.Span(e.serviceName, span))
+}
+
+// Export exports metrics to New Relic.
+func (e *Exporter) Export(_ context.Context, cps metricsdk.CheckpointSet) error {
+	return cps.ForEach(func(record metricsdk.Record) error {
+		m, err := transform.Record(e.serviceName, record)
+		if err != nil {
+			return err
+		}
+		e.harvester.RecordMetric(m)
+		return nil
+	})
 }

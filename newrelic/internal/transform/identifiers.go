@@ -7,6 +7,8 @@ const (
 	errorCodeAttrKey    = "error.code"
 	errorMessageAttrKey = "error.message"
 
+	serviceNameAttrKey = "service.name"
+
 	instrumentationProviderAttrKey   = "instrumentation.provider"
 	instrumentationProviderAttrValue = "opentelemetry"
 
