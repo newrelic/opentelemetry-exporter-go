@@ -4,15 +4,22 @@
 package newrelic
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
-	"reflect"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/api/core"
 	"go.opentelemetry.io/otel/sdk/export/trace"
-	"google.golang.org/grpc/codes"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 func TestServiceNameMissing(t *testing.T) {
@@ -33,188 +40,163 @@ func TestNilExporter(t *testing.T) {
 	e.ExportSpans(context.Background(), []*trace.SpanData{span})
 }
 
-const (
-	sampleTraceIDString  = "4bf92f3577b34da6a3ce929d0e0e4736"
-	sampleSpanIDString   = "00f067aa0ba902b7"
-	sampleParentIDString = "83887e5d7da921ba"
-)
+// MockTransport caches decompressed request bodies
+type MockTransport struct {
+	Data []Data
+}
 
-var (
-	sampleTraceID, _  = core.TraceIDFromHex(sampleTraceIDString)
-	sampleSpanID, _   = core.SpanIDFromHex(sampleSpanIDString)
-	sampleParentID, _ = core.SpanIDFromHex(sampleParentIDString)
-)
+func (c *MockTransport) Spans() []Span {
+	var spans []Span
+	for _, data := range c.Data {
+		spans = append(spans, data.Spans...)
+	}
+	return spans
+}
 
-func TestTransformSpans(t *testing.T) {
-	e, err := NewExporter("myService", "apiKey")
-	if e == nil || err != nil {
-		t.Fatal(e, err)
+func (c *MockTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	// telemetry sdk gzip compresses json payloads
+	gz, err := gzip.NewReader(r.Body)
+	if err != nil {
+		return nil, err
 	}
-	now := time.Now()
-	testcases := []struct {
-		testname string
-		input    *trace.SpanData
-		expect   telemetry.Span
-	}{
-		{
-			testname: "basic span",
-			input: &trace.SpanData{
-				SpanContext: core.SpanContext{
-					TraceID: sampleTraceID,
-					SpanID:  sampleSpanID,
-				},
-				StartTime: now,
-				EndTime:   now.Add(2 * time.Second),
-				Name:      "mySpan",
-			},
-			expect: telemetry.Span{
-				Name:        "mySpan",
-				ID:          sampleSpanIDString,
-				TraceID:     sampleTraceIDString,
-				Timestamp:   now,
-				Duration:    2 * time.Second,
-				ServiceName: "myService",
-				Attributes: map[string]interface{}{
-					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
-					collectorNameAttrKey:           collectorNameAttrValue,
-				},
-			},
-		},
-		{
-			testname: "span with parent",
-			input: &trace.SpanData{
-				SpanContext: core.SpanContext{
-					TraceID: sampleTraceID,
-					SpanID:  sampleSpanID,
-				},
-				ParentSpanID: sampleParentID,
-				StartTime:    now,
-				EndTime:      now.Add(2 * time.Second),
-				Name:         "mySpan",
-			},
-			expect: telemetry.Span{
-				Name:        "mySpan",
-				ID:          sampleSpanIDString,
-				TraceID:     sampleTraceIDString,
-				ParentID:    sampleParentIDString,
-				Timestamp:   now,
-				Duration:    2 * time.Second,
-				ServiceName: "myService",
-				Attributes: map[string]interface{}{
-					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
-					collectorNameAttrKey:           collectorNameAttrValue,
-				},
-			},
-		},
-		{
-			testname: "span with error",
-			input: &trace.SpanData{
-				SpanContext: core.SpanContext{
-					TraceID: sampleTraceID,
-					SpanID:  sampleSpanID,
-				},
-				Status:    codes.ResourceExhausted,
-				StartTime: now,
-				EndTime:   now.Add(2 * time.Second),
-				Name:      "mySpan",
-			},
-			expect: telemetry.Span{
-				Name:        "mySpan",
-				ID:          sampleSpanIDString,
-				TraceID:     sampleTraceIDString,
-				Timestamp:   now,
-				Duration:    2 * time.Second,
-				ServiceName: "myService",
-				Attributes: map[string]interface{}{
-					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
-					collectorNameAttrKey:           collectorNameAttrValue,
-					errorCodeAttrKey:               uint32(codes.ResourceExhausted),
-					errorMessageAttrKey:            "ResourceExhausted",
-				},
-			},
-		},
-		{
-			testname: "span with attributes",
-			input: &trace.SpanData{
-				SpanContext: core.SpanContext{
-					TraceID: sampleTraceID,
-					SpanID:  sampleSpanID,
-				},
-				StartTime: now,
-				EndTime:   now.Add(2 * time.Second),
-				Name:      "mySpan",
-				Attributes: []core.KeyValue{
-					core.Key("x0").Bool(true),
-					core.Key("x1").Float32(1.0),
-					core.Key("x2").Float64(2.0),
-					core.Key("x3").Int(3),
-					core.Key("x4").Int32(4),
-					core.Key("x5").Int64(5),
-					core.Key("x6").String("6"),
-					core.Key("x7").Uint(7),
-					core.Key("x8").Uint32(8),
-					core.Key("x9").Uint64(9),
-				},
-			},
-			expect: telemetry.Span{
-				Name:        "mySpan",
-				ID:          sampleSpanIDString,
-				TraceID:     sampleTraceIDString,
-				Timestamp:   now,
-				Duration:    2 * time.Second,
-				ServiceName: "myService",
-				Attributes: map[string]interface{}{
-					"x0":                           true,
-					"x1":                           float32(1.0),
-					"x2":                           float64(2.0),
-					"x3":                           int64(3),
-					"x4":                           int32(4),
-					"x5":                           int64(5),
-					"x6":                           "6",
-					"x7":                           uint64(7),
-					"x8":                           uint32(8),
-					"x9":                           uint64(9),
-					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
-					collectorNameAttrKey:           collectorNameAttrValue,
-				},
-			},
-		},
-		{
-			testname: "span with attributes and error",
-			input: &trace.SpanData{
-				SpanContext: core.SpanContext{
-					TraceID: sampleTraceID,
-					SpanID:  sampleSpanID,
-				},
-				Status:    codes.ResourceExhausted,
-				StartTime: now,
-				EndTime:   now.Add(2 * time.Second),
-				Name:      "mySpan",
-				Attributes: []core.KeyValue{
-					core.Key("x0").Bool(true),
-				},
-			},
-			expect: telemetry.Span{
-				Name:        "mySpan",
-				ID:          sampleSpanIDString,
-				TraceID:     sampleTraceIDString,
-				Timestamp:   now,
-				Duration:    2 * time.Second,
-				ServiceName: "myService",
-				Attributes: map[string]interface{}{
-					"x0":                           true,
-					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
-					collectorNameAttrKey:           collectorNameAttrValue,
-					errorCodeAttrKey:               uint32(codes.ResourceExhausted),
-					errorMessageAttrKey:            "ResourceExhausted",
-				},
-			},
-		},
+	defer gz.Close()
+
+	contents, err := ioutil.ReadAll(gz)
+	if err != nil {
+		return nil, err
 	}
-	for _, tc := range testcases {
-		got := e.transformSpan(tc.input)
-		if !reflect.DeepEqual(got, tc.expect) {
-			t.Error(tc.testname, got, tc.expect)
+
+	if !json.Valid(contents) {
+		return nil, errors.New("error validating request body json")
+	}
+	err = c.ParseRequest(contents)
+	if err != nil {
+		return nil, err
+	}
+
+	return &http.Response{
+		StatusCode: 200,
+		Body:       ioutil.NopCloser(&bytes.Buffer{}),
+	}, nil
+}
+
+func (c *MockTransport) ParseRequest(b []byte) error {
+	var data []Data
+	if err := json.Unmarshal(b, &data); err != nil {
+		return err
+	}
+	c.Data = append(c.Data, data...)
+	return nil
+}
+
+type Data struct {
+	Common  Common                 `json:"common"`
+	Spans   []Span                 `json:"spans"`
+	Metrics []Metric               `json:"metrics"`
+	XXX     map[string]interface{} `json:"-"`
+}
+
+type Common struct {
+	timestamp  interface{}       `json:"-"`
+	interval   interface{}       `json:"-"`
+	Attributes map[string]string `json:"attributes"`
+}
+
+type Span struct {
+	ID         string                 `json:"id"`
+	TraceID    string                 `json:"trace.id"`
+	Attributes map[string]interface{} `json:"attributes"`
+	timestamp  interface{}            `json:"-"`
+}
+
+type Metric struct {
+	Name       string                 `json:"name"`
+	Type       string                 `json:"type"`
+	Value      interface{}            `json:"value"`
+	timestamp  interface{}            `json:"-"`
+	Attributes map[string]interface{} `json:"attributes"`
+}
+
+func TestEndToEndTracer(t *testing.T) {
+	numSpans := 4
+	serviceName := "opentelemetry-service"
+	mockt := &MockTransport{
+		Data: make([]Data, 0, numSpans),
+	}
+	e, err := NewExporter(
+		serviceName,
+		"apiKey",
+		telemetry.ConfigHarvestPeriod(0),
+		telemetry.ConfigBasicErrorLogger(os.Stderr),
+		telemetry.ConfigBasicDebugLogger(os.Stderr),
+		telemetry.ConfigBasicAuditLogger(os.Stderr),
+		func(cfg *telemetry.Config) {
+			cfg.MetricsURLOverride = "localhost"
+			cfg.SpansURLOverride = "localhost"
+			cfg.Client.Transport = mockt
+		},
+	)
+	if err != nil {
+		t.Fatalf("failed to instantiate exporter: %v", err)
+	}
+
+	traceProvider, err := sdktrace.NewProvider(
+		sdktrace.WithBatcher(e, sdktrace.WithScheduleDelayMillis(15), sdktrace.WithMaxExportBatchSize(10)),
+	)
+	if err != nil {
+		t.Fatalf("failed to instantiate trace provider: %v", err)
+	}
+
+	tracer := traceProvider.Tracer("test-tracer")
+
+	var decend func(context.Context, int)
+	decend = func(ctx context.Context, n int) {
+		if n <= 0 {
+			return
+		}
+		depth := numSpans - n
+		ctx, span := tracer.Start(ctx, fmt.Sprintf("Span %d", depth))
+		span.SetAttributes(core.Key("depth").Int(depth))
+		decend(ctx, n-1)
+		span.End()
+	}
+	decend(context.Background(), numSpans)
+
+	// Wait >2 cycles.
+	<-time.After(40 * time.Millisecond)
+	e.harvester.HarvestNow(context.Background())
+
+	gotSpans := mockt.Spans()
+	if got := len(gotSpans); got != numSpans {
+		t.Fatalf("expecting %d spans, got %d", numSpans, got)
+	}
+
+	var traceID, parentID string
+	// Reverse order to start at the beginning of the trace.
+	for i := len(gotSpans) - 1; i >= 0; i-- {
+		depth := numSpans - i - 1
+		s := gotSpans[i]
+		name := s.Attributes["name"]
+		if traceID != "" {
+			if got := s.TraceID; got != traceID {
+				t.Errorf("span trace ID for %s: got %q, want %q", name, got, traceID)
+			}
+			if got := s.Attributes["parent.id"]; got != parentID {
+				t.Errorf("span parent ID for %s: got %q, want %q", name, got, parentID)
+			}
+			parentID = s.ID
+		} else {
+			traceID = s.TraceID
+			parentID = s.ID
+		}
+		if got, want := name, fmt.Sprintf("Span %d", depth); got != want {
+			t.Errorf("span name: got %q, want %q", got, want)
+		}
+		if got := s.Attributes["service.name"]; got != serviceName {
+			t.Errorf("span service name for %s: got %q, want %q", name, got, serviceName)
+		}
+		if got := s.Attributes["depth"].(float64); got != float64(depth) {
+			t.Errorf("span 'depth' for %s: got %g, want %d", name, got, depth)
 		}
 	}
 }
