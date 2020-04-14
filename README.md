@@ -1,4 +1,4 @@
-# New Relic Go OpenTelemetry Exporter [![GoDoc](https://godoc.org/github.com/newrelic/opentelemetry-exporter-go/newrelic?status.svg)](https://godoc.org/github.com/newrelic/opentelemetry-exporter-go/newrelic)
+# New Relic Go OpenTelemetry exporter [![GoDoc](https://godoc.org/github.com/newrelic/opentelemetry-exporter-go/newrelic?status.svg)](https://godoc.org/github.com/newrelic/opentelemetry-exporter-go/newrelic)
 
 The `"github.com/newrelic/opentelemetry-exporter-go/newrelic"` package
 provides an exporter for sending OpenTelemetry data to New Relic.  Currently,
@@ -37,6 +37,15 @@ this exporter may introduce changes that are not backwards compatible without a 
 version increment.  We will strive to ensure backwards compatibility when a stable version
 of the OpenTelemetry Go client is released.
 
+## Find and use your data
+
+For tips on how to find and query your data in New Relic, see [Find trace/span data](https://docs.newrelic.com/docs/understand-dependencies/distributed-tracing/trace-api/introduction-trace-api#view-data).
+
+
+For general querying information, see:
+- [Query New Relic data](https://docs.newrelic.com/docs/using-new-relic/data/understand-data/query-new-relic-data)
+- [Intro to NRQL](https://docs.newrelic.com/docs/query-data/nrql-new-relic-query-language/getting-started/introduction-nrql)
+
 ## Licensing
 The New Relic Go OpenTelemetry exporter is licensed under the Apache 2.0 License.
 The New Relic Go OpenTelemetry exporter also uses source code from third party
@@ -58,6 +67,6 @@ open-source@newrelic.com.
 The New Relic Telemetry APIs are rate limited. Please reference the
 documentation for [New Relic Metrics
 API](https://docs.newrelic.com/docs/introduction-new-relic-metric-api) and [New
-Relic Trace API Requirements and
-Limits](https://docs.newrelic.com/docs/apm/distributed-tracing/trace-api/trace-api-general-requirements-limits)
+Relic Trace API requirements and
+limits](https://docs.newrelic.com/docs/apm/distributed-tracing/trace-api/trace-api-general-requirements-limits)
 on the specifics of the rate limits.
