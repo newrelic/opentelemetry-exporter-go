@@ -18,7 +18,12 @@ import (
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/api/core"
+	"go.opentelemetry.io/otel/api/metric"
+	metricapi "go.opentelemetry.io/otel/api/metric"
 	"go.opentelemetry.io/otel/sdk/export/trace"
+	"go.opentelemetry.io/otel/sdk/metric/batcher/ungrouped"
+	"go.opentelemetry.io/otel/sdk/metric/controller/push"
+	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -51,6 +56,14 @@ func (c *MockTransport) Spans() []Span {
 		spans = append(spans, data.Spans...)
 	}
 	return spans
+}
+
+func (c *MockTransport) Metrics() []Metric {
+	var metrics []Metric
+	for _, data := range c.Data {
+		metrics = append(metrics, data.Metrics...)
+	}
+	return metrics
 }
 
 func (c *MockTransport) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -197,6 +210,145 @@ func TestEndToEndTracer(t *testing.T) {
 		}
 		if got := s.Attributes["depth"].(float64); got != float64(depth) {
 			t.Errorf("span 'depth' for %s: got %g, want %d", name, got, depth)
+		}
+	}
+}
+
+func TestEndToEndMeter(t *testing.T) {
+	serviceName := "opentelemetry-service"
+	type data struct {
+		iKind metric.Kind
+		nKind core.NumberKind
+		val   int64
+	}
+	instruments := map[string]data{
+		"test-int64-counter":    {metric.CounterKind, core.Int64NumberKind, 1},
+		"test-float64-counter":  {metric.CounterKind, core.Float64NumberKind, 1},
+		"test-int64-measure":    {metric.MeasureKind, core.Int64NumberKind, 2},
+		"test-float64-measure":  {metric.MeasureKind, core.Float64NumberKind, 2},
+		"test-int64-observer":   {metric.ObserverKind, core.Int64NumberKind, 3},
+		"test-float64-observer": {metric.ObserverKind, core.Float64NumberKind, 3},
+	}
+
+	mockt := &MockTransport{
+		Data: make([]Data, 0, len(instruments)),
+	}
+	e, err := NewExporter(
+		serviceName,
+		"apiKey",
+		telemetry.ConfigHarvestPeriod(0),
+		telemetry.ConfigBasicErrorLogger(os.Stderr),
+		telemetry.ConfigBasicDebugLogger(os.Stderr),
+		telemetry.ConfigBasicAuditLogger(os.Stderr),
+		func(cfg *telemetry.Config) {
+			cfg.MetricsURLOverride = "localhost"
+			cfg.SpansURLOverride = "localhost"
+			cfg.Client.Transport = mockt
+		},
+	)
+	if err != nil {
+		t.Fatalf("failed to instantiate exporter: %v", err)
+	}
+
+	selector := simple.NewWithExactMeasure()
+	batcher := ungrouped.New(selector, true)
+	pusher := push.New(batcher, e, 60*time.Second)
+	pusher.Start()
+
+	ctx := context.Background()
+	meter := pusher.Meter("test-meter")
+
+	for name, data := range instruments {
+		switch data.iKind {
+		case metric.CounterKind:
+			switch data.nKind {
+			case core.Int64NumberKind:
+				metricapi.Must(meter).NewInt64Counter(name).Add(ctx, data.val)
+			case core.Float64NumberKind:
+				metricapi.Must(meter).NewFloat64Counter(name).Add(ctx, float64(data.val))
+			default:
+				t.Fatal("unsupported number testing kind", data.nKind.String())
+			}
+		case metric.MeasureKind:
+			switch data.nKind {
+			case core.Int64NumberKind:
+				metricapi.Must(meter).NewInt64Measure(name).Record(ctx, data.val)
+			case core.Float64NumberKind:
+				metricapi.Must(meter).NewFloat64Measure(name).Record(ctx, float64(data.val))
+			default:
+				t.Fatal("unsupported number testing kind", data.nKind.String())
+			}
+		case metric.ObserverKind:
+			switch data.nKind {
+			case core.Int64NumberKind:
+				callback := func(v int64) metricapi.Int64ObserverCallback {
+					return metricapi.Int64ObserverCallback(func(result metricapi.Int64ObserverResult) { result.Observe(v) })
+				}(data.val)
+				metricapi.Must(meter).RegisterInt64Observer(name, callback)
+			case core.Float64NumberKind:
+				callback := func(v float64) metricapi.Float64ObserverCallback {
+					return metricapi.Float64ObserverCallback(func(result metricapi.Float64ObserverResult) { result.Observe(v) })
+				}(float64(data.val))
+				metricapi.Must(meter).RegisterFloat64Observer(name, callback)
+			default:
+				t.Fatal("unsupported number testing kind", data.nKind.String())
+			}
+		default:
+			t.Fatal("unsupported metrics testing kind", data.iKind.String())
+		}
+	}
+
+	// Wait >2 cycles.
+	<-time.After(40 * time.Millisecond)
+
+	// Flush and close.
+	pusher.Stop()
+	e.harvester.HarvestNow(ctx)
+
+	gotMetrics := mockt.Metrics()
+	if got, want := len(gotMetrics), len(instruments); got != want {
+		t.Fatalf("expecting %d spans, got %d", want, got)
+	}
+	seen := make(map[string]struct{}, len(instruments))
+	for _, m := range gotMetrics {
+		want, ok := instruments[m.Name]
+		if !ok {
+			t.Fatal("unknown metrics", m.Name)
+			continue
+		}
+		seen[m.Name] = struct{}{}
+
+		switch want.iKind {
+		case metric.CounterKind:
+			if m.Type != "count" {
+				t.Errorf("metric type for %s: got %q, want \"counter\"", m.Name, m.Type)
+			}
+			if got := m.Value.(float64); got != float64(want.val) {
+				t.Errorf("metric value for %s: got %g, want %d", m.Name, m.Value, want.val)
+			}
+		case metric.MeasureKind, metric.ObserverKind:
+			if m.Type != "summary" {
+				t.Errorf("metric type for %s: got %q, want \"summary\"", m.Name, m.Type)
+			}
+			value := m.Value.(map[string]interface{})
+			if got := value["count"].(float64); got != 1 {
+				t.Errorf("metric value for %s: got %g, want %d", m.Name, m.Value, 1)
+			}
+			if got := value["sum"].(float64); got != float64(want.val) {
+				t.Errorf("metric value for %s: got %g, want %d", m.Name, m.Value, want.val)
+			}
+			if got := value["min"].(float64); got != float64(want.val) {
+				t.Errorf("metric value for %s: got %g, want %d", m.Name, m.Value, want.val)
+			}
+			if got := value["max"].(float64); got != float64(want.val) {
+				t.Errorf("metric value for %s: got %g, want %d", m.Name, m.Value, want.val)
+			}
+		}
+	}
+
+	for i := range instruments {
+		if _, ok := seen[i]; !ok {
+			t.Errorf("no metric(s) exported for %q", i)
 		}
 	}
 }
