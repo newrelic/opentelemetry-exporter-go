@@ -263,18 +263,18 @@ func TestEndToEndMeter(t *testing.T) {
 		case metric.CounterKind:
 			switch data.nKind {
 			case core.Int64NumberKind:
-				metricapi.Must(meter).NewInt64Counter(name).Add(ctx, data.val, nil)
+				metricapi.Must(meter).NewInt64Counter(name).Add(ctx, data.val)
 			case core.Float64NumberKind:
-				metricapi.Must(meter).NewFloat64Counter(name).Add(ctx, float64(data.val), nil)
+				metricapi.Must(meter).NewFloat64Counter(name).Add(ctx, float64(data.val))
 			default:
 				t.Fatal("unsupported number testing kind", data.nKind.String())
 			}
 		case metric.MeasureKind:
 			switch data.nKind {
 			case core.Int64NumberKind:
-				metricapi.Must(meter).NewInt64Measure(name).Record(ctx, data.val, nil)
+				metricapi.Must(meter).NewInt64Measure(name).Record(ctx, data.val)
 			case core.Float64NumberKind:
-				metricapi.Must(meter).NewFloat64Measure(name).Record(ctx, float64(data.val), nil)
+				metricapi.Must(meter).NewFloat64Measure(name).Record(ctx, float64(data.val))
 			default:
 				t.Fatal("unsupported number testing kind", data.nKind.String())
 			}
@@ -282,12 +282,12 @@ func TestEndToEndMeter(t *testing.T) {
 			switch data.nKind {
 			case core.Int64NumberKind:
 				callback := func(v int64) metricapi.Int64ObserverCallback {
-					return metricapi.Int64ObserverCallback(func(result metricapi.Int64ObserverResult) { result.Observe(v, nil) })
+					return metricapi.Int64ObserverCallback(func(result metricapi.Int64ObserverResult) { result.Observe(v) })
 				}(data.val)
 				metricapi.Must(meter).RegisterInt64Observer(name, callback)
 			case core.Float64NumberKind:
 				callback := func(v float64) metricapi.Float64ObserverCallback {
-					return metricapi.Float64ObserverCallback(func(result metricapi.Float64ObserverResult) { result.Observe(v, nil) })
+					return metricapi.Float64ObserverCallback(func(result metricapi.Float64ObserverResult) { result.Observe(v) })
 				}(float64(data.val))
 				metricapi.Must(meter).RegisterFloat64Observer(name, callback)
 			default:

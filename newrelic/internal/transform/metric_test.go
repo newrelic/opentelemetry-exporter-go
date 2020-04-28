@@ -9,6 +9,8 @@ import (
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/api/core"
+	"go.opentelemetry.io/otel/api/key"
+	"go.opentelemetry.io/otel/api/label"
 	"go.opentelemetry.io/otel/api/metric"
 	metricapi "go.opentelemetry.io/otel/api/metric"
 	"go.opentelemetry.io/otel/api/unit"
@@ -24,7 +26,7 @@ var defaultAttrs = map[string]string{
 }
 
 func TestDefaultAttributes(t *testing.T) {
-	attrs := attributes("", nil, metricsdk.NewLabels(metricsdk.LabelSlice{}, "", nil))
+	attrs := attributes("", nil, nil, nil)
 	if got, want := len(attrs), len(defaultAttrs); got != want {
 		t.Errorf("incorrect number of default attributes: got %d, want %d", got, want)
 	}
@@ -32,66 +34,88 @@ func TestDefaultAttributes(t *testing.T) {
 
 func TestServiceNameAttributes(t *testing.T) {
 	want := "test-service-name"
-	attrs := attributes(want, nil, metricsdk.NewLabels(metricsdk.LabelSlice{}, "", nil))
+	attrs := attributes(want, nil, nil, nil)
 	if got, ok := attrs[serviceNameAttrKey]; !ok || got != want {
 		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
 	}
 }
 
-func TestDescriptorAttributes(t *testing.T) {
+func TestAttributes(t *testing.T) {
 	for i, test := range []struct {
-		opts []metricapi.Option
-		want map[string]interface{}
+		res    *resource.Resource
+		opts   []metricapi.Option
+		labels []core.KeyValue
+		want   map[string]interface{}
 	}{
+		{}, // test defaults
 		{
-			[]metricapi.Option{
-				metricapi.WithResource(*resource.New(core.Key("A").String("a"))),
-			},
-			map[string]interface{}{
+			res:    resource.New(key.String("A", "a")),
+			opts:   nil,
+			labels: nil,
+			want: map[string]interface{}{
 				"A": "a",
 			},
 		},
 		{
-			[]metricapi.Option{
-				metricapi.WithResource(*resource.New(core.Key("A").String("a"), core.Key("1").Int64(1))),
-			},
-			map[string]interface{}{
+			res:    resource.New(key.String("A", "a"), key.Int64("1", 1)),
+			opts:   nil,
+			labels: nil,
+			want: map[string]interface{}{
 				"A": "a",
 				"1": int64(1),
 			},
 		},
 		{
-			[]metricapi.Option{
-				metricapi.WithUnit(unit.Bytes),
-			},
-			map[string]interface{}{
+			res:    nil,
+			opts:   []metricapi.Option{metricapi.WithUnit(unit.Bytes)},
+			labels: nil,
+			want: map[string]interface{}{
 				"unit": "By",
 			},
 		},
 		{
-			[]metricapi.Option{
-				metricapi.WithDescription("test description"),
-			},
-			map[string]interface{}{
+			res:    nil,
+			opts:   []metricapi.Option{metricapi.WithDescription("test description")},
+			labels: nil,
+			want: map[string]interface{}{
 				"description": "test description",
 			},
 		},
 		{
-			[]metricapi.Option{
-				metricapi.WithResource(*resource.New(core.Key("B").String("b"), core.Key("2").Int64(2))),
-				metricapi.WithUnit(unit.Milliseconds),
-				metricapi.WithDescription("test description 2"),
+			res:    nil,
+			opts:   nil,
+			labels: []core.KeyValue{key.String("A", "a")},
+			want: map[string]interface{}{
+				"A": "a",
 			},
-			map[string]interface{}{
-				"B":           "b",
-				"2":           int64(2),
+		},
+		{
+			res:    nil,
+			opts:   nil,
+			labels: []core.KeyValue{key.String("A", "a"), key.Int64("1", 1)},
+			want: map[string]interface{}{
+				"A": "a",
+				"1": int64(1),
+			},
+		},
+		{
+			res: resource.New(key.String("K1", "V1"), key.String("K2", "V2")),
+			opts: []metricapi.Option{
+				metricapi.WithUnit(unit.Milliseconds),
+				metricapi.WithDescription("d3"),
+			},
+			labels: []core.KeyValue{key.String("K2", "V3")},
+			want: map[string]interface{}{
+				"K1":          "V1",
+				"K2":          "V3",
 				"unit":        "ms",
-				"description": "test description 2",
+				"description": "d3",
 			},
 		},
 	} {
 		name := fmt.Sprintf("descriptor test %d", i)
 		desc := metricapi.NewDescriptor(name, metricapi.CounterKind, core.Int64NumberKind, test.opts...)
+		l := label.NewSet(test.labels...)
 		expected := make(map[string]interface{}, len(defaultAttrs)+len(test.want))
 		for k, v := range defaultAttrs {
 			expected[k] = v
@@ -99,48 +123,9 @@ func TestDescriptorAttributes(t *testing.T) {
 		for k, v := range test.want {
 			expected[k] = v
 		}
-		got := attributes("", &desc, metricsdk.NewLabels(metricsdk.LabelSlice{}, "", nil))
+		got := attributes("", test.res, &desc, &l)
 		if !reflect.DeepEqual(got, expected) {
 			t.Errorf("%s: %#v != %#v", name, got, expected)
-		}
-	}
-}
-
-func TestLabelAttributes(t *testing.T) {
-	for i, test := range []struct {
-		labels []core.KeyValue
-		want   map[string]interface{}
-	}{
-		{
-			[]core.KeyValue{
-				core.Key("A").String("a"),
-			},
-			map[string]interface{}{
-				"A": "a",
-			},
-		},
-		{
-			[]core.KeyValue{
-				core.Key("A").String("a"),
-				core.Key("1").Int64(1),
-			},
-			map[string]interface{}{
-				"A": "a",
-				"1": int64(1),
-			},
-		},
-	} {
-		expected := make(map[string]interface{}, len(defaultAttrs)+len(test.want))
-		for k, v := range defaultAttrs {
-			expected[k] = v
-		}
-		for k, v := range test.want {
-			expected[k] = v
-		}
-		l := metricsdk.NewLabels(metricsdk.LabelSlice(test.labels), "", nil)
-		got := attributes("", nil, l)
-		if !reflect.DeepEqual(got, expected) {
-			t.Errorf("labels test %d: %#v != %#v", i, got, expected)
 		}
 	}
 }
@@ -149,7 +134,7 @@ var numKinds = []core.NumberKind{core.Int64NumberKind, core.Uint64NumberKind, co
 
 func TestMinMaxSumCountRecord(t *testing.T) {
 	name := "test-mmsc"
-	l := metricsdk.NewLabels(metricsdk.LabelSlice{}, "", nil)
+	l := label.NewSet()
 	for _, iKind := range []metric.Kind{metric.MeasureKind, metric.ObserverKind} {
 		for _, nKind := range numKinds {
 			desc := metric.NewDescriptor(name, iKind, nKind)
@@ -181,7 +166,7 @@ func TestMinMaxSumCountRecord(t *testing.T) {
 
 			mmsc.Checkpoint(context.Background(), &desc)
 
-			m, err := Record("", metricsdk.NewRecord(&desc, l, mmsc))
+			m, err := Record("", nil, metricsdk.NewRecord(&desc, &l, mmsc))
 			if err != nil {
 				t.Fatalf("Record(MMSC,%s,%s) error: %v", nKind, iKind, err)
 			}
@@ -210,7 +195,7 @@ func TestMinMaxSumCountRecord(t *testing.T) {
 
 func TestSumRecord(t *testing.T) {
 	name := "test-sum"
-	l := metricsdk.NewLabels(metricsdk.LabelSlice{}, "", nil)
+	l := label.NewSet()
 	for _, nKind := range numKinds {
 		desc := metric.NewDescriptor(name, metric.CounterKind, nKind)
 		s := sumAgg.New()
@@ -229,7 +214,7 @@ func TestSumRecord(t *testing.T) {
 		}
 
 		s.Checkpoint(context.Background(), &desc)
-		m, err := Record("", metricsdk.NewRecord(&desc, l, s))
+		m, err := Record("", nil, metricsdk.NewRecord(&desc, &l, s))
 		if err != nil {
 			t.Fatalf("Record(SUM,%s) error: %v", nKind, err)
 		}
@@ -258,8 +243,8 @@ func (a fakeAgg) Merge(metricsdk.Aggregator, *metric.Descriptor) error          
 func TestErrUnimplementedAgg(t *testing.T) {
 	fa := fakeAgg{}
 	desc := metric.NewDescriptor("", metric.CounterKind, core.Int64NumberKind)
-	l := metricsdk.NewLabels(metricsdk.LabelSlice{}, "", nil)
-	_, err := Record("", metricsdk.NewRecord(&desc, l, fa))
+	l := label.NewSet()
+	_, err := Record("", nil, metricsdk.NewRecord(&desc, &l, fa))
 	if !errors.Is(err, ErrUnimplementedAgg) {
 		t.Errorf("unexpected error: %v", err)
 	}

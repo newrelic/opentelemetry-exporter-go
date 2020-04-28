@@ -8,9 +8,11 @@ import (
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/api/core"
+	"go.opentelemetry.io/otel/api/label"
 	"go.opentelemetry.io/otel/api/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/export/metric"
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregator"
+	"go.opentelemetry.io/otel/sdk/resource"
 )
 
 // ErrUnimplementedAgg is returned when a transformation of an unimplemented
@@ -20,10 +22,10 @@ var ErrUnimplementedAgg = errors.New("unimplemented aggregator")
 // Record transforms an OpenTelemetry Record into a Metric.
 //
 // An ErrUnimplementedAgg error is returned for unimplemented Aggregators.
-func Record(service string, r metricsdk.Record) (telemetry.Metric, error) {
-	desc := r.Descriptor()
-	attrs := attributes(service, desc, r.Labels())
-	switch a := r.Aggregator().(type) {
+func Record(service string, res *resource.Resource, record metricsdk.Record) (telemetry.Metric, error) {
+	desc := record.Descriptor()
+	attrs := attributes(service, res, desc, record.Labels())
+	switch a := record.Aggregator().(type) {
 	case aggregator.MinMaxSumCount:
 		return minMaxSumCount(desc, attrs, a)
 	case aggregator.Sum:
@@ -81,13 +83,10 @@ func minMaxSumCount(desc *metric.Descriptor, attrs map[string]interface{}, a agg
 	}, nil
 }
 
-func attributes(service string, desc *metric.Descriptor, labels metricsdk.Labels) map[string]interface{} {
-	iter := labels.Iter()
-
+func attributes(service string, res *resource.Resource, desc *metric.Descriptor, labels *label.Set) map[string]interface{} {
 	// By default include New Relic attributes and all labels
-	n := 2 + iter.Len()
+	n := 2 + labels.Len() + res.Len()
 	if desc != nil {
-		n += len(desc.Resource().Attributes())
 		if desc.Unit() != "" {
 			n++
 		}
@@ -100,15 +99,18 @@ func attributes(service string, desc *metric.Descriptor, labels metricsdk.Labels
 	}
 	attrs := make(map[string]interface{}, n)
 
-	for iter.Next() {
+	for iter := res.Iter(); iter.Next(); {
+		kv := iter.Label()
+		attrs[string(kv.Key)] = kv.Value.AsInterface()
+	}
+
+	// If duplicate labels with Resource these take precedence.
+	for iter := labels.Iter(); iter.Next(); {
 		kv := iter.Label()
 		attrs[string(kv.Key)] = kv.Value.AsInterface()
 	}
 
 	if desc != nil {
-		for _, kv := range desc.Resource().Attributes() {
-			attrs[string(kv.Key)] = kv.Value.AsInterface()
-		}
 		if desc.Unit() != "" {
 			attrs["unit"] = string(desc.Unit())
 		}
