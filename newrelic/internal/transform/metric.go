@@ -7,7 +7,6 @@ import (
 	"errors"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/core"
 	"go.opentelemetry.io/otel/api/label"
 	"go.opentelemetry.io/otel/api/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/export/metric"
@@ -50,7 +49,7 @@ func sum(desc *metric.Descriptor, attrs map[string]interface{}, a aggregator.Sum
 
 // minMaxSumCountValue returns the values of the MinMaxSumCount Aggregator
 // as discret values or any error returned from parsing any of the values.
-func minMaxSumCountValues(a aggregator.MinMaxSumCount) (min, max, sum core.Number, count int64, err error) {
+func minMaxSumCountValues(a aggregator.MinMaxSumCount) (min, max, sum metric.Number, count int64, err error) {
 	if min, err = a.Min(); err != nil {
 		return
 	}

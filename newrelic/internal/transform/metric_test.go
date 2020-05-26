@@ -8,8 +8,7 @@ import (
 	"testing"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/core"
-	"go.opentelemetry.io/otel/api/key"
+	"go.opentelemetry.io/otel/api/kv"
 	"go.opentelemetry.io/otel/api/label"
 	"go.opentelemetry.io/otel/api/metric"
 	metricapi "go.opentelemetry.io/otel/api/metric"
@@ -44,12 +43,12 @@ func TestAttributes(t *testing.T) {
 	for i, test := range []struct {
 		res    *resource.Resource
 		opts   []metricapi.Option
-		labels []core.KeyValue
+		labels []kv.KeyValue
 		want   map[string]interface{}
 	}{
 		{}, // test defaults
 		{
-			res:    resource.New(key.String("A", "a")),
+			res:    resource.New(kv.String("A", "a")),
 			opts:   nil,
 			labels: nil,
 			want: map[string]interface{}{
@@ -57,7 +56,7 @@ func TestAttributes(t *testing.T) {
 			},
 		},
 		{
-			res:    resource.New(key.String("A", "a"), key.Int64("1", 1)),
+			res:    resource.New(kv.String("A", "a"), kv.Int64("1", 1)),
 			opts:   nil,
 			labels: nil,
 			want: map[string]interface{}{
@@ -84,7 +83,7 @@ func TestAttributes(t *testing.T) {
 		{
 			res:    nil,
 			opts:   nil,
-			labels: []core.KeyValue{key.String("A", "a")},
+			labels: []kv.KeyValue{kv.String("A", "a")},
 			want: map[string]interface{}{
 				"A": "a",
 			},
@@ -92,19 +91,19 @@ func TestAttributes(t *testing.T) {
 		{
 			res:    nil,
 			opts:   nil,
-			labels: []core.KeyValue{key.String("A", "a"), key.Int64("1", 1)},
+			labels: []kv.KeyValue{kv.String("A", "a"), kv.Int64("1", 1)},
 			want: map[string]interface{}{
 				"A": "a",
 				"1": int64(1),
 			},
 		},
 		{
-			res: resource.New(key.String("K1", "V1"), key.String("K2", "V2")),
+			res: resource.New(kv.String("K1", "V1"), kv.String("K2", "V2")),
 			opts: []metricapi.Option{
 				metricapi.WithUnit(unit.Milliseconds),
 				metricapi.WithDescription("d3"),
 			},
-			labels: []core.KeyValue{key.String("K2", "V3")},
+			labels: []kv.KeyValue{kv.String("K2", "V3")},
 			want: map[string]interface{}{
 				"K1":          "V1",
 				"K2":          "V3",
@@ -114,7 +113,7 @@ func TestAttributes(t *testing.T) {
 		},
 	} {
 		name := fmt.Sprintf("descriptor test %d", i)
-		desc := metricapi.NewDescriptor(name, metricapi.CounterKind, core.Int64NumberKind, test.opts...)
+		desc := metricapi.NewDescriptor(name, metricapi.CounterKind, metric.Int64NumberKind, test.opts...)
 		l := label.NewSet(test.labels...)
 		expected := make(map[string]interface{}, len(defaultAttrs)+len(test.want))
 		for k, v := range defaultAttrs {
@@ -130,7 +129,7 @@ func TestAttributes(t *testing.T) {
 	}
 }
 
-var numKinds = []core.NumberKind{core.Int64NumberKind, core.Uint64NumberKind, core.Float64NumberKind}
+var numKinds = []metric.NumberKind{metric.Int64NumberKind, metric.Uint64NumberKind, metric.Float64NumberKind}
 
 func TestMinMaxSumCountRecord(t *testing.T) {
 	name := "test-mmsc"
@@ -140,25 +139,25 @@ func TestMinMaxSumCountRecord(t *testing.T) {
 			desc := metric.NewDescriptor(name, iKind, nKind)
 			mmsc := minmaxsumcount.New(&desc)
 
-			var n core.Number
+			var n metric.Number
 			switch nKind {
-			case core.Int64NumberKind:
-				n = core.NewInt64Number(1)
-			case core.Uint64NumberKind:
-				n = core.NewUint64Number(1)
-			case core.Float64NumberKind:
-				n = core.NewFloat64Number(1)
+			case metric.Int64NumberKind:
+				n = metric.NewInt64Number(1)
+			case metric.Uint64NumberKind:
+				n = metric.NewUint64Number(1)
+			case metric.Float64NumberKind:
+				n = metric.NewFloat64Number(1)
 			}
 			if err := mmsc.Update(context.Background(), n, &desc); err != nil {
 				t.Fatal(err)
 			}
 			switch nKind {
-			case core.Int64NumberKind:
-				n = core.NewInt64Number(10)
-			case core.Uint64NumberKind:
-				n = core.NewUint64Number(10)
-			case core.Float64NumberKind:
-				n = core.NewFloat64Number(10)
+			case metric.Int64NumberKind:
+				n = metric.NewInt64Number(10)
+			case metric.Uint64NumberKind:
+				n = metric.NewUint64Number(10)
+			case metric.Float64NumberKind:
+				n = metric.NewFloat64Number(10)
 			}
 			if err := mmsc.Update(context.Background(), n, &desc); err != nil {
 				t.Fatal(err)
@@ -200,14 +199,14 @@ func TestSumRecord(t *testing.T) {
 		desc := metric.NewDescriptor(name, metric.CounterKind, nKind)
 		s := sumAgg.New()
 
-		var n core.Number
+		var n metric.Number
 		switch nKind {
-		case core.Int64NumberKind:
-			n = core.NewInt64Number(2)
-		case core.Uint64NumberKind:
-			n = core.NewUint64Number(2)
-		case core.Float64NumberKind:
-			n = core.NewFloat64Number(2)
+		case metric.Int64NumberKind:
+			n = metric.NewInt64Number(2)
+		case metric.Uint64NumberKind:
+			n = metric.NewUint64Number(2)
+		case metric.Float64NumberKind:
+			n = metric.NewFloat64Number(2)
 		}
 		if err := s.Update(context.Background(), n, &desc); err != nil {
 			t.Fatal(err)
@@ -236,13 +235,13 @@ func TestSumRecord(t *testing.T) {
 
 type fakeAgg struct{}
 
-func (a fakeAgg) Update(context.Context, core.Number, *metric.Descriptor) error { return nil }
-func (a fakeAgg) Checkpoint(context.Context, *metric.Descriptor)                {}
-func (a fakeAgg) Merge(metricsdk.Aggregator, *metric.Descriptor) error          { return nil }
+func (a fakeAgg) Update(context.Context, metric.Number, *metric.Descriptor) error { return nil }
+func (a fakeAgg) Checkpoint(context.Context, *metric.Descriptor)                  {}
+func (a fakeAgg) Merge(metricsdk.Aggregator, *metric.Descriptor) error            { return nil }
 
 func TestErrUnimplementedAgg(t *testing.T) {
 	fa := fakeAgg{}
-	desc := metric.NewDescriptor("", metric.CounterKind, core.Int64NumberKind)
+	desc := metric.NewDescriptor("", metric.CounterKind, metric.Int64NumberKind)
 	l := label.NewSet()
 	_, err := Record("", nil, metricsdk.NewRecord(&desc, &l, fa))
 	if !errors.Is(err, ErrUnimplementedAgg) {

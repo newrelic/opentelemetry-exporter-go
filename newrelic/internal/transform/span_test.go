@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/core"
-	"go.opentelemetry.io/otel/sdk/export/trace"
+	"go.opentelemetry.io/otel/api/kv"
+	"go.opentelemetry.io/otel/api/trace"
+	exporttrace "go.opentelemetry.io/otel/sdk/export/trace"
 	"google.golang.org/grpc/codes"
 )
 
@@ -22,22 +23,22 @@ const (
 )
 
 var (
-	sampleTraceID, _  = core.TraceIDFromHex(sampleTraceIDString)
-	sampleSpanID, _   = core.SpanIDFromHex(sampleSpanIDString)
-	sampleParentID, _ = core.SpanIDFromHex(sampleParentIDString)
+	sampleTraceID, _  = trace.IDFromHex(sampleTraceIDString)
+	sampleSpanID, _   = trace.SpanIDFromHex(sampleSpanIDString)
+	sampleParentID, _ = trace.SpanIDFromHex(sampleParentIDString)
 )
 
 func TestTransformSpans(t *testing.T) {
 	now := time.Now()
 	testcases := []struct {
 		testname string
-		input    *trace.SpanData
+		input    *exporttrace.SpanData
 		expect   telemetry.Span
 	}{
 		{
 			testname: "basic span",
-			input: &trace.SpanData{
-				SpanContext: core.SpanContext{
+			input: &exporttrace.SpanData{
+				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
 				},
@@ -60,8 +61,8 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with parent",
-			input: &trace.SpanData{
-				SpanContext: core.SpanContext{
+			input: &exporttrace.SpanData{
+				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
 				},
@@ -86,8 +87,8 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with error",
-			input: &trace.SpanData{
-				SpanContext: core.SpanContext{
+			input: &exporttrace.SpanData{
+				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
 				},
@@ -114,25 +115,25 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with attributes",
-			input: &trace.SpanData{
-				SpanContext: core.SpanContext{
+			input: &exporttrace.SpanData{
+				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
 				},
 				StartTime: now,
 				EndTime:   now.Add(2 * time.Second),
 				Name:      "mySpan",
-				Attributes: []core.KeyValue{
-					core.Key("x0").Bool(true),
-					core.Key("x1").Float32(1.0),
-					core.Key("x2").Float64(2.0),
-					core.Key("x3").Int(3),
-					core.Key("x4").Int32(4),
-					core.Key("x5").Int64(5),
-					core.Key("x6").String("6"),
-					core.Key("x7").Uint(7),
-					core.Key("x8").Uint32(8),
-					core.Key("x9").Uint64(9),
+				Attributes: []kv.KeyValue{
+					kv.Key("x0").Bool(true),
+					kv.Key("x1").Float32(1.0),
+					kv.Key("x2").Float64(2.0),
+					kv.Key("x3").Int(3),
+					kv.Key("x4").Int32(4),
+					kv.Key("x5").Int64(5),
+					kv.Key("x6").String("6"),
+					kv.Key("x7").Uint(7),
+					kv.Key("x8").Uint32(8),
+					kv.Key("x9").Uint64(9),
 				},
 			},
 			expect: telemetry.Span{
@@ -160,8 +161,8 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with attributes and error",
-			input: &trace.SpanData{
-				SpanContext: core.SpanContext{
+			input: &exporttrace.SpanData{
+				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
 				},
@@ -170,8 +171,8 @@ func TestTransformSpans(t *testing.T) {
 				StartTime:     now,
 				EndTime:       now.Add(2 * time.Second),
 				Name:          "mySpan",
-				Attributes: []core.KeyValue{
-					core.Key("x0").Bool(true),
+				Attributes: []kv.KeyValue{
+					kv.Key("x0").Bool(true),
 				},
 			},
 			expect: telemetry.Span{
