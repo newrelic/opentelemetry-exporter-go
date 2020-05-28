@@ -17,13 +17,13 @@ import (
 	"time"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/core"
+	"go.opentelemetry.io/otel/api/kv"
 	"go.opentelemetry.io/otel/api/metric"
 	metricapi "go.opentelemetry.io/otel/api/metric"
 	"go.opentelemetry.io/otel/sdk/export/trace"
-	"go.opentelemetry.io/otel/sdk/metric/batcher/ungrouped"
 	"go.opentelemetry.io/otel/sdk/metric/controller/push"
-	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
+	integrator "go.opentelemetry.io/otel/sdk/metric/integrator/simple"
+	selector "go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -169,7 +169,7 @@ func TestEndToEndTracer(t *testing.T) {
 		}
 		depth := numSpans - n
 		ctx, span := tracer.Start(ctx, fmt.Sprintf("Span %d", depth))
-		span.SetAttributes(core.Key("depth").Int(depth))
+		span.SetAttributes(kv.Key("depth").Int(depth))
 		decend(ctx, n-1)
 		span.End()
 	}
@@ -218,16 +218,16 @@ func TestEndToEndMeter(t *testing.T) {
 	serviceName := "opentelemetry-service"
 	type data struct {
 		iKind metric.Kind
-		nKind core.NumberKind
+		nKind metric.NumberKind
 		val   int64
 	}
 	instruments := map[string]data{
-		"test-int64-counter":    {metric.CounterKind, core.Int64NumberKind, 1},
-		"test-float64-counter":  {metric.CounterKind, core.Float64NumberKind, 1},
-		"test-int64-measure":    {metric.MeasureKind, core.Int64NumberKind, 2},
-		"test-float64-measure":  {metric.MeasureKind, core.Float64NumberKind, 2},
-		"test-int64-observer":   {metric.ObserverKind, core.Int64NumberKind, 3},
-		"test-float64-observer": {metric.ObserverKind, core.Float64NumberKind, 3},
+		"test-int64-counter":    {metric.CounterKind, metric.Int64NumberKind, 1},
+		"test-float64-counter":  {metric.CounterKind, metric.Float64NumberKind, 1},
+		"test-int64-measure":    {metric.MeasureKind, metric.Int64NumberKind, 2},
+		"test-float64-measure":  {metric.MeasureKind, metric.Float64NumberKind, 2},
+		"test-int64-observer":   {metric.ObserverKind, metric.Int64NumberKind, 3},
+		"test-float64-observer": {metric.ObserverKind, metric.Float64NumberKind, 3},
 	}
 
 	mockt := &MockTransport{
@@ -250,8 +250,8 @@ func TestEndToEndMeter(t *testing.T) {
 		t.Fatalf("failed to instantiate exporter: %v", err)
 	}
 
-	selector := simple.NewWithExactMeasure()
-	batcher := ungrouped.New(selector, true)
+	aggSelector := selector.NewWithExactMeasure()
+	batcher := integrator.New(aggSelector, true)
 	pusher := push.New(batcher, e, 60*time.Second)
 	pusher.Start()
 
@@ -262,30 +262,30 @@ func TestEndToEndMeter(t *testing.T) {
 		switch data.iKind {
 		case metric.CounterKind:
 			switch data.nKind {
-			case core.Int64NumberKind:
+			case metric.Int64NumberKind:
 				metricapi.Must(meter).NewInt64Counter(name).Add(ctx, data.val)
-			case core.Float64NumberKind:
+			case metric.Float64NumberKind:
 				metricapi.Must(meter).NewFloat64Counter(name).Add(ctx, float64(data.val))
 			default:
 				t.Fatal("unsupported number testing kind", data.nKind.String())
 			}
 		case metric.MeasureKind:
 			switch data.nKind {
-			case core.Int64NumberKind:
+			case metric.Int64NumberKind:
 				metricapi.Must(meter).NewInt64Measure(name).Record(ctx, data.val)
-			case core.Float64NumberKind:
+			case metric.Float64NumberKind:
 				metricapi.Must(meter).NewFloat64Measure(name).Record(ctx, float64(data.val))
 			default:
 				t.Fatal("unsupported number testing kind", data.nKind.String())
 			}
 		case metric.ObserverKind:
 			switch data.nKind {
-			case core.Int64NumberKind:
+			case metric.Int64NumberKind:
 				callback := func(v int64) metricapi.Int64ObserverCallback {
 					return metricapi.Int64ObserverCallback(func(result metricapi.Int64ObserverResult) { result.Observe(v) })
 				}(data.val)
 				metricapi.Must(meter).RegisterInt64Observer(name, callback)
-			case core.Float64NumberKind:
+			case metric.Float64NumberKind:
 				callback := func(v float64) metricapi.Float64ObserverCallback {
 					return metricapi.Float64ObserverCallback(func(result metricapi.Float64ObserverResult) { result.Observe(v) })
 				}(float64(data.val))
