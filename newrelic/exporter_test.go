@@ -110,8 +110,8 @@ type Data struct {
 }
 
 type Common struct {
-	timestamp  interface{}       `json:"-"`
-	interval   interface{}       `json:"-"`
+	timestamp  interface{}
+	interval   interface{}
 	Attributes map[string]string `json:"attributes"`
 }
 
@@ -119,14 +119,14 @@ type Span struct {
 	ID         string                 `json:"id"`
 	TraceID    string                 `json:"trace.id"`
 	Attributes map[string]interface{} `json:"attributes"`
-	timestamp  interface{}            `json:"-"`
+	timestamp  interface{}
 }
 
 type Metric struct {
-	Name       string                 `json:"name"`
-	Type       string                 `json:"type"`
-	Value      interface{}            `json:"value"`
-	timestamp  interface{}            `json:"-"`
+	Name       string      `json:"name"`
+	Type       string      `json:"type"`
+	Value      interface{} `json:"value"`
+	timestamp  interface{}
 	Attributes map[string]interface{} `json:"attributes"`
 }
 
