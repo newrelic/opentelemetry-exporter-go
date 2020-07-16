@@ -1,8 +1,7 @@
 name: Go
 
 on:
-  pull_request:
-    branches: [ master ]
+  pull_request
 
 jobs:
 
