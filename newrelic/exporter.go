@@ -7,12 +7,13 @@ package newrelic
 import (
 	"context"
 	"errors"
+	"go.opentelemetry.io/otel/api/metric"
+	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic/internal/transform"
 	metricsdk "go.opentelemetry.io/otel/sdk/export/metric"
 	tracesdk "go.opentelemetry.io/otel/sdk/export/trace"
-	"go.opentelemetry.io/otel/sdk/resource"
 )
 
 const (
@@ -78,13 +79,17 @@ func (e *Exporter) ExportSpan(ctx context.Context, span *tracesdk.SpanData) {
 }
 
 // Export exports metrics to New Relic.
-func (e *Exporter) Export(_ context.Context, r *resource.Resource, cps metricsdk.CheckpointSet) error {
-	return cps.ForEach(func(record metricsdk.Record) error {
-		m, err := transform.Record(e.serviceName, r, record)
+func (e *Exporter) Export(_ context.Context, cps metricsdk.CheckpointSet) error {
+	return cps.ForEach(e, func(record metricsdk.Record) error {
+		m, err := transform.Record(e.serviceName, record)
 		if err != nil {
 			return err
 		}
 		e.harvester.RecordMetric(m)
 		return nil
 	})
+}
+
+func (e *Exporter) ExportKindFor(_ *metric.Descriptor, _ aggregation.Kind) metricsdk.ExportKind {
+	return metricsdk.DeltaExporter
 }
