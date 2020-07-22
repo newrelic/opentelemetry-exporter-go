@@ -2,7 +2,7 @@
 
 The `"github.com/newrelic/opentelemetry-exporter-go/newrelic"` package
 provides an exporter for sending OpenTelemetry data to New Relic.  Currently,
-only traces are supported.
+traces and the latest metric instruments (as of v0.8 of Open Telemetry) are supported.
 
 Example use:
 
