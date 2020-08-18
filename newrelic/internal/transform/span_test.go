@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/api/kv"
 	"go.opentelemetry.io/otel/api/trace"
 	exporttrace "go.opentelemetry.io/otel/sdk/export/trace"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"google.golang.org/grpc/codes"
 )
 
@@ -188,6 +189,65 @@ func TestTransformSpans(t *testing.T) {
 					collectorNameAttrKey:           collectorNameAttrValue,
 					errorCodeAttrKey:               uint32(codes.ResourceExhausted),
 					errorMessageAttrKey:            "ResourceExhausted",
+				},
+			},
+		},
+		{
+			testname: "span with service name in resource",
+			input: &exporttrace.SpanData{
+				SpanContext: trace.SpanContext{
+					TraceID: sampleTraceID,
+					SpanID:  sampleSpanID,
+				},
+				StartTime: now,
+				EndTime:   now.Add(2 * time.Second),
+				Name:      "mySpan",
+				Resource: resource.New(
+					kv.String("service.name", "resource service"),
+				),
+			},
+			expect: telemetry.Span{
+				Name:        "mySpan",
+				ID:          sampleSpanIDString,
+				TraceID:     sampleTraceIDString,
+				Timestamp:   now,
+				Duration:    2 * time.Second,
+				ServiceName: "resource service",
+				Attributes: map[string]interface{}{
+					"service.name":                 "resource service",
+					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
+					collectorNameAttrKey:           collectorNameAttrValue,
+				},
+			},
+		},
+		{
+			testname: "span with service name in attributes",
+			input: &exporttrace.SpanData{
+				SpanContext: trace.SpanContext{
+					TraceID: sampleTraceID,
+					SpanID:  sampleSpanID,
+				},
+				StartTime: now,
+				EndTime:   now.Add(2 * time.Second),
+				Name:      "mySpan",
+				Resource: resource.New(
+					kv.String("service.name", "resource service"),
+				),
+				Attributes: []kv.KeyValue{
+					kv.String("service.name", "attributes service"),
+				},
+			},
+			expect: telemetry.Span{
+				Name:        "mySpan",
+				ID:          sampleSpanIDString,
+				TraceID:     sampleTraceIDString,
+				Timestamp:   now,
+				Duration:    2 * time.Second,
+				ServiceName: "attributes service",
+				Attributes: map[string]interface{}{
+					"service.name":                 "attributes service",
+					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
+					collectorNameAttrKey:           collectorNameAttrValue,
 				},
 			},
 		},

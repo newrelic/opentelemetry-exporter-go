@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 	"reflect"
 	"testing"
 	"time"
+
+	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/api/kv"
@@ -34,8 +35,22 @@ func TestDefaultAttributes(t *testing.T) {
 }
 
 func TestServiceNameAttributes(t *testing.T) {
+	wrong := "wrong"
 	want := "test-service-name"
 	attrs := attributes(want, nil, nil, nil)
+	if got, ok := attrs[serviceNameAttrKey]; !ok || got != want {
+		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
+	}
+
+	r := resource.New(kv.String("service.name", want))
+	attrs = attributes(wrong, r, nil, nil)
+	if got, ok := attrs[serviceNameAttrKey]; !ok || got != want {
+		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
+	}
+
+	r = resource.New(kv.String("service.name", wrong))
+	l := label.NewSet(kv.String("service.name", want))
+	attrs = attributes(wrong, r, nil, &l)
 	if got, ok := attrs[serviceNameAttrKey]; !ok || got != want {
 		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
 	}
@@ -165,7 +180,6 @@ func TestMinMaxSumCountRecord(t *testing.T) {
 			if err := mmsc.SynchronizedMove(ckpt, &desc); err != nil {
 				t.Fatal(err)
 			}
-
 
 			m, err := Record("", metricsdk.NewRecord(&desc, &l, nil, ckpt, time.Now(), time.Now()))
 			if err != nil {
