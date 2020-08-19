@@ -1,7 +1,7 @@
 // Copyright 2019 New Relic Corporation. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// Package newrelic contains an OpenTelemetry tracing exporter for New Relic.
+// Package newrelic provides an OpenTelemetry exporter for New Relic.
 package newrelic
 
 import (
@@ -30,9 +30,6 @@ const (
 	version          = "0.1.0"
 	userAgentProduct = "NewRelic-Go-OpenTelemetry"
 )
-
-// Java implementation:
-// https://github.com/newrelic/newrelic-opentelemetry-java-exporters/tree/master/src/main/java/com/newrelic/telemetry/opentelemetry/export
 
 // Exporter exports OpenTelemetry data to New Relic.
 type Exporter struct {
@@ -73,9 +70,20 @@ func NewExporter(service, apiKey string, options ...func(*telemetry.Config)) (*E
 // following environment variables to configure the exporter installed in the
 // pipeline:
 //
-//    * `NEW_RELIC_API_KEY`: New Relic API key.
-//    * `NEW_RELIC_METRIC_URL`: URL to New Relic metric endpoint.
-//    * `NEW_RELIC_METRIC_URL`: URL to New Relic trace endpoint.
+//    * `NEW_RELIC_API_KEY`: New Relic Insights insert API key.
+//    * `NEW_RELIC_METRIC_URL`: Override URL to New Relic metric endpoint.
+//    * `NEW_RELIC_TRACE_URL`: Override URL to New Relic trace endpoint.
+//
+// More information about the New Relic Insights insert API key can be found
+// here: https://docs.newrelic.com/docs/apis/get-started/intro-apis/types-new-relic-api-keys#event-insert-key.
+//
+// The exporter will send telemetry to the default New Relic metric and trace
+// API endpoints in the United States. These can be overwritten with the above
+// environment variables. These are useful if you wish to send to our EU
+// endpoints:
+//
+//    * EU metric API endpoint: metric-api.eu.newrelic.com/metric/v1
+//    * EU trace API endpoint: trace-api.eu.newrelic.com/trace/v1
 func NewExportPipeline(service string, traceOpt []sdktrace.ProviderOption, pushOpt []push.Option) (apitrace.Provider, *push.Controller, error) {
 	apiKey, ok := os.LookupEnv("NEW_RELIC_API_KEY")
 	if !ok {
@@ -128,9 +136,20 @@ func NewExportPipeline(service string, traceOpt []sdktrace.ProviderOption, pushO
 // following environment variables to configure the exporter installed in the
 // pipeline:
 //
-//    * `NEW_RELIC_API_KEY`: New Relic API key.
-//    * `NEW_RELIC_METRIC_URL`: URL to New Relic metric endpoint.
-//    * `NEW_RELIC_METRIC_URL`: URL to New Relic trace endpoint.
+//    * `NEW_RELIC_API_KEY`: New Relic Insights insert API key.
+//    * `NEW_RELIC_METRIC_URL`: Override URL to New Relic metric endpoint.
+//    * `NEW_RELIC_TRACE_URL`: Override URL to New Relic trace endpoint.
+//
+// More information about the New Relic Insights insert API key can be found
+// here: https://docs.newrelic.com/docs/apis/get-started/intro-apis/types-new-relic-api-keys#event-insert-key.
+//
+// The exporter will send telemetry to the default New Relic metric and trace
+// API endpoints in the United States. These can be overwritten with the above
+// environment variables. These are useful if you wish to send to our EU
+// endpoints:
+//
+//    * EU metric API endpoint: metric-api.eu.newrelic.com/metric/v1
+//    * EU trace API endpoint: trace-api.eu.newrelic.com/trace/v1
 func InstallNewPipeline(service string) (*push.Controller, error) {
 	tp, controller, err := NewExportPipeline(service, nil, nil)
 	if err != nil {

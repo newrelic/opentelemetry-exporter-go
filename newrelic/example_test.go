@@ -44,8 +44,8 @@ func ExampleNewExportPipeline() {
 		standard.ServiceNameKey.String("My Service"),
 	)
 
-	// Assumes NEW_RELIC_API_KEY contains your New Relic API key. This will
-	// error if it does not.
+	// Assumes the NEW_RELIC_API_KEY environment variable contains your New
+	// Relic Insights insert API key. This will error if it does not.
 	traceProvider, controller, err := newrelic.NewExportPipeline(
 		"My Service",
 		[]trace.ProviderOption{
@@ -73,8 +73,8 @@ func ExampleNewExportPipeline() {
 }
 
 func ExampleInstallNewPipeline() {
-	// Assumes NEW_RELIC_API_KEY contains your New Relic API key. This will
-	// error if it does not.
+	// Assumes the NEW_RELIC_API_KEY environment variable contains your New
+	// Relic Insights insert API key. This will error if it does not.
 	controller, err := newrelic.InstallNewPipeline("My Service")
 	if err != nil {
 		log.Fatal(err)
