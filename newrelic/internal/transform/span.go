@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
+	"go.opentelemetry.io/otel/api/standard"
 	"go.opentelemetry.io/otel/sdk/export/trace"
 	"google.golang.org/grpc/codes"
 )
@@ -17,8 +18,11 @@ import (
 // https://godoc.org/github.com/newrelic/newrelic-telemetry-sdk-go/telemetry#Span
 // https://godoc.org/go.opentelemetry.io/otel/sdk/export/trace#SpanData
 func Span(service string, span *trace.SpanData) telemetry.Span {
+	// Default to exporter service name.
+	serviceName := service
+
 	// Account for the instrumentation provider and collector name.
-	numAttrs := len(span.Attributes) + 2
+	numAttrs := len(span.Attributes) + span.Resource.Len() + 2
 
 	// Consider everything other than an OK as an error.
 	isError := span.StatusCode != codes.OK
@@ -28,7 +32,19 @@ func Span(service string, span *trace.SpanData) telemetry.Span {
 
 	// Copy attributes to new value.
 	attrs := make(map[string]interface{}, numAttrs)
+	for iter := span.Resource.Iter(); iter.Next(); {
+		kv := iter.Label()
+		// Resource service name overrides the exporter.
+		if kv.Key == standard.ServiceNameKey {
+			serviceName = kv.Value.AsString()
+		}
+		attrs[string(kv.Key)] = kv.Value.AsInterface()
+	}
 	for _, kv := range span.Attributes {
+		// Span service name overrides the Resource.
+		if kv.Key == standard.ServiceNameKey {
+			serviceName = kv.Value.AsString()
+		}
 		attrs[string(kv.Key)] = kv.Value.AsInterface()
 	}
 
@@ -53,7 +69,7 @@ func Span(service string, span *trace.SpanData) telemetry.Span {
 		Name:        span.Name,
 		ParentID:    parentSpanID,
 		Duration:    span.EndTime.Sub(span.StartTime),
-		ServiceName: service,
+		ServiceName: serviceName,
 		Attributes:  attrs,
 	}
 }
