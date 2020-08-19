@@ -5,6 +5,7 @@ package transform
 
 import (
 	"errors"
+
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
@@ -99,6 +100,12 @@ func attributes(service string, res *resource.Resource, desc *metric.Descriptor,
 	}
 	attrs := make(map[string]interface{}, n)
 
+	if service != "" {
+		// This is intentionally overwritten by the resource and then the
+		// instrument itself if they contain the service name.
+		attrs[serviceNameAttrKey] = service
+	}
+
 	for iter := res.Iter(); iter.Next(); {
 		kv := iter.Label()
 		attrs[string(kv.Key)] = kv.Value.AsInterface()
@@ -118,10 +125,6 @@ func attributes(service string, res *resource.Resource, desc *metric.Descriptor,
 			attrs["description"] = desc.Description()
 		}
 	}
-	if service != "" {
-		attrs[serviceNameAttrKey] = service
-	}
-
 	// New Relic registered attributes to identify where this data came from.
 	attrs[instrumentationProviderAttrKey] = instrumentationProviderAttrValue
 	attrs[collectorNameAttrKey] = collectorNameAttrValue
