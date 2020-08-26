@@ -5,7 +5,7 @@ package transform
 
 import (
 	"encoding/hex"
-  "strings"
+	"strings"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/api/standard"
