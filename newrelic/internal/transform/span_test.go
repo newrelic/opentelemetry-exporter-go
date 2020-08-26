@@ -221,6 +221,36 @@ func TestTransformSpans(t *testing.T) {
 			},
 		},
 		{
+			testname: "span with a kind",
+			input: &exporttrace.SpanData{
+				SpanContext: trace.SpanContext{
+					TraceID: sampleTraceID,
+					SpanID:  sampleSpanID,
+				},
+				SpanKind:  trace.SpanKindClient,
+				StartTime: now,
+				EndTime:   now.Add(2 * time.Second),
+				Name:      "mySpan",
+				Resource: resource.New(
+					kv.String("service.name", "resource service"),
+				),
+			},
+			expect: telemetry.Span{
+				Name:        "mySpan",
+				ID:          sampleSpanIDString,
+				TraceID:     sampleTraceIDString,
+				Timestamp:   now,
+				Duration:    2 * time.Second,
+				ServiceName: "resource service",
+				Attributes: map[string]interface{}{
+					"service.name":                 "resource service",
+					"span.kind":                    "CLIENT",
+					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
+					collectorNameAttrKey:           collectorNameAttrValue,
+				},
+			},
+		},
+		{
 			testname: "span with service name in attributes",
 			input: &exporttrace.SpanData{
 				SpanContext: trace.SpanContext{
