@@ -5,9 +5,11 @@ package transform
 
 import (
 	"encoding/hex"
+  "strings"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/api/standard"
+	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/sdk/export/trace"
 	"google.golang.org/grpc/codes"
 )
@@ -23,6 +25,11 @@ func Span(service string, span *trace.SpanData) telemetry.Span {
 
 	// Account for the instrumentation provider and collector name.
 	numAttrs := len(span.Attributes) + span.Resource.Len() + 2
+
+	// If kind has been set, make room for it.
+	if span.SpanKind != apitrace.SpanKindUnspecified {
+		numAttrs++
+	}
 
 	// Consider everything other than an OK as an error.
 	isError := span.StatusCode != codes.OK
@@ -46,6 +53,10 @@ func Span(service string, span *trace.SpanData) telemetry.Span {
 			serviceName = kv.Value.AsString()
 		}
 		attrs[string(kv.Key)] = kv.Value.AsInterface()
+	}
+
+	if span.SpanKind != apitrace.SpanKindUnspecified {
+		attrs["span.kind"] = strings.ToUpper(span.SpanKind.String())
 	}
 
 	// New Relic registered attributes to identify where this data came from.
