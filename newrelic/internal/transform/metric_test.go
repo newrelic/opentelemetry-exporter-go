@@ -11,11 +11,10 @@ import (
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/kv"
-	"go.opentelemetry.io/otel/api/label"
 	"go.opentelemetry.io/otel/api/metric"
 	metricapi "go.opentelemetry.io/otel/api/metric"
 	"go.opentelemetry.io/otel/api/unit"
+	"go.opentelemetry.io/otel/label"
 	metricsdk "go.opentelemetry.io/otel/sdk/export/metric"
 	"go.opentelemetry.io/otel/sdk/metric/aggregator/minmaxsumcount"
 	sumAgg "go.opentelemetry.io/otel/sdk/metric/aggregator/sum"
@@ -42,14 +41,14 @@ func TestServiceNameAttributes(t *testing.T) {
 		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
 	}
 
-	r := resource.New(kv.String("service.name", want))
+	r := resource.New(label.String("service.name", want))
 	attrs = attributes(wrong, r, nil, nil)
 	if got, ok := attrs[serviceNameAttrKey]; !ok || got != want {
 		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
 	}
 
-	r = resource.New(kv.String("service.name", wrong))
-	l := label.NewSet(kv.String("service.name", want))
+	r = resource.New(label.String("service.name", wrong))
+	l := label.NewSet(label.String("service.name", want))
 	attrs = attributes(wrong, r, nil, &l)
 	if got, ok := attrs[serviceNameAttrKey]; !ok || got != want {
 		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
@@ -60,12 +59,12 @@ func TestAttributes(t *testing.T) {
 	for i, test := range []struct {
 		res    *resource.Resource
 		opts   []metricapi.InstrumentOption
-		labels []kv.KeyValue
+		labels []label.KeyValue
 		want   map[string]interface{}
 	}{
 		{}, // test defaults
 		{
-			res:    resource.New(kv.String("A", "a")),
+			res:    resource.New(label.String("A", "a")),
 			opts:   nil,
 			labels: nil,
 			want: map[string]interface{}{
@@ -73,7 +72,7 @@ func TestAttributes(t *testing.T) {
 			},
 		},
 		{
-			res:    resource.New(kv.String("A", "a"), kv.Int64("1", 1)),
+			res:    resource.New(label.String("A", "a"), label.Int64("1", 1)),
 			opts:   nil,
 			labels: nil,
 			want: map[string]interface{}{
@@ -100,7 +99,7 @@ func TestAttributes(t *testing.T) {
 		{
 			res:    nil,
 			opts:   nil,
-			labels: []kv.KeyValue{kv.String("A", "a")},
+			labels: []label.KeyValue{label.String("A", "a")},
 			want: map[string]interface{}{
 				"A": "a",
 			},
@@ -108,19 +107,19 @@ func TestAttributes(t *testing.T) {
 		{
 			res:    nil,
 			opts:   nil,
-			labels: []kv.KeyValue{kv.String("A", "a"), kv.Int64("1", 1)},
+			labels: []label.KeyValue{label.String("A", "a"), label.Int64("1", 1)},
 			want: map[string]interface{}{
 				"A": "a",
 				"1": int64(1),
 			},
 		},
 		{
-			res: resource.New(kv.String("K1", "V1"), kv.String("K2", "V2")),
+			res: resource.New(label.String("K1", "V1"), label.String("K2", "V2")),
 			opts: []metricapi.InstrumentOption{
 				metricapi.WithUnit(unit.Milliseconds),
 				metricapi.WithDescription("d3"),
 			},
-			labels: []kv.KeyValue{kv.String("K2", "V3")},
+			labels: []label.KeyValue{label.String("K2", "V3")},
 			want: map[string]interface{}{
 				"K1":          "V1",
 				"K2":          "V3",

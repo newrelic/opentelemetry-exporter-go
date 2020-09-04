@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/kv"
 	"go.opentelemetry.io/otel/api/metric"
 	metricapi "go.opentelemetry.io/otel/api/metric"
+	"go.opentelemetry.io/otel/label"
 	"go.opentelemetry.io/otel/sdk/export/trace"
 	"go.opentelemetry.io/otel/sdk/metric/controller/push"
 	integrator "go.opentelemetry.io/otel/sdk/metric/processor/basic"
@@ -169,7 +169,7 @@ func TestEndToEndTracer(t *testing.T) {
 		}
 		depth := numSpans - n
 		ctx, span := tracer.Start(ctx, fmt.Sprintf("Span %d", depth))
-		span.SetAttributes(kv.Key("depth").Int(depth))
+		span.SetAttributes(label.Int("depth", depth))
 		decend(ctx, n-1)
 		span.End()
 	}
@@ -264,10 +264,10 @@ func TestEndToEndMeter(t *testing.T) {
 	ctx := context.Background()
 	meter := pusher.Provider().Meter("test-meter")
 
-	newInt64ObserverCallback := func(v int64) metricapi.Int64ObserverCallback {
+	newInt64ObserverCallback := func(v int64) metricapi.Int64ObserverFunc {
 		return func(ctx context.Context, result metricapi.Int64ObserverResult) { result.Observe(v) }
 	}
-	newFloat64ObserverCallback := func(v float64) metricapi.Float64ObserverCallback {
+	newFloat64ObserverCallback := func(v float64) metricapi.Float64ObserverFunc {
 		return func(ctx context.Context, result metricapi.Float64ObserverResult) { result.Observe(v) }
 	}
 
