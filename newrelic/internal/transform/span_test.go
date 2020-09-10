@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/kv"
 	"go.opentelemetry.io/otel/api/trace"
+	"go.opentelemetry.io/otel/label"
 	exporttrace "go.opentelemetry.io/otel/sdk/export/trace"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"google.golang.org/grpc/codes"
@@ -124,17 +124,17 @@ func TestTransformSpans(t *testing.T) {
 				StartTime: now,
 				EndTime:   now.Add(2 * time.Second),
 				Name:      "mySpan",
-				Attributes: []kv.KeyValue{
-					kv.Key("x0").Bool(true),
-					kv.Key("x1").Float32(1.0),
-					kv.Key("x2").Float64(2.0),
-					kv.Key("x3").Int(3),
-					kv.Key("x4").Int32(4),
-					kv.Key("x5").Int64(5),
-					kv.Key("x6").String("6"),
-					kv.Key("x7").Uint(7),
-					kv.Key("x8").Uint32(8),
-					kv.Key("x9").Uint64(9),
+				Attributes: []label.KeyValue{
+					label.Bool("x0", true),
+					label.Float32("x1", 1.0),
+					label.Float64("x2", 2.0),
+					label.Int("x3", 3),
+					label.Int32("x4", 4),
+					label.Int64("x5", 5),
+					label.String("x6", "6"),
+					label.Uint("x7", 7),
+					label.Uint32("x8", 8),
+					label.Uint64("x9", 9),
 				},
 			},
 			expect: telemetry.Span{
@@ -172,8 +172,8 @@ func TestTransformSpans(t *testing.T) {
 				StartTime:     now,
 				EndTime:       now.Add(2 * time.Second),
 				Name:          "mySpan",
-				Attributes: []kv.KeyValue{
-					kv.Key("x0").Bool(true),
+				Attributes: []label.KeyValue{
+					label.Bool("x0", true),
 				},
 			},
 			expect: telemetry.Span{
@@ -203,7 +203,7 @@ func TestTransformSpans(t *testing.T) {
 				EndTime:   now.Add(2 * time.Second),
 				Name:      "mySpan",
 				Resource: resource.New(
-					kv.String("service.name", "resource service"),
+					label.String("service.name", "resource service"),
 				),
 			},
 			expect: telemetry.Span{
@@ -221,6 +221,36 @@ func TestTransformSpans(t *testing.T) {
 			},
 		},
 		{
+			testname: "span with a kind",
+			input: &exporttrace.SpanData{
+				SpanContext: trace.SpanContext{
+					TraceID: sampleTraceID,
+					SpanID:  sampleSpanID,
+				},
+				SpanKind:  trace.SpanKindClient,
+				StartTime: now,
+				EndTime:   now.Add(2 * time.Second),
+				Name:      "mySpan",
+				Resource: resource.New(
+					label.String("service.name", "resource service"),
+				),
+			},
+			expect: telemetry.Span{
+				Name:        "mySpan",
+				ID:          sampleSpanIDString,
+				TraceID:     sampleTraceIDString,
+				Timestamp:   now,
+				Duration:    2 * time.Second,
+				ServiceName: "resource service",
+				Attributes: map[string]interface{}{
+					"service.name":                 "resource service",
+					"span.kind":                    "CLIENT",
+					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
+					collectorNameAttrKey:           collectorNameAttrValue,
+				},
+			},
+		},
+		{
 			testname: "span with service name in attributes",
 			input: &exporttrace.SpanData{
 				SpanContext: trace.SpanContext{
@@ -231,10 +261,10 @@ func TestTransformSpans(t *testing.T) {
 				EndTime:   now.Add(2 * time.Second),
 				Name:      "mySpan",
 				Resource: resource.New(
-					kv.String("service.name", "resource service"),
+					label.String("service.name", "resource service"),
 				),
-				Attributes: []kv.KeyValue{
-					kv.String("service.name", "attributes service"),
+				Attributes: []label.KeyValue{
+					label.String("service.name", "attributes service"),
 				},
 			},
 			expect: telemetry.Span{
