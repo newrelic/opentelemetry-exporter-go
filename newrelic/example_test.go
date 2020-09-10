@@ -11,11 +11,11 @@ import (
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
 	"go.opentelemetry.io/otel/api/global"
-	"go.opentelemetry.io/otel/api/kv"
-	"go.opentelemetry.io/otel/api/standard"
+	"go.opentelemetry.io/otel/label"
 	"go.opentelemetry.io/otel/sdk/metric/controller/push"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/semconv"
 )
 
 func ExampleNewExporter() {
@@ -40,8 +40,8 @@ func ExampleNewExporter() {
 func ExampleNewExportPipeline() {
 	// Include environment in resource.
 	r := resource.New(
-		kv.String("environment", "production"),
-		standard.ServiceNameKey.String("My Service"),
+		label.String("environment", "production"),
+		semconv.ServiceNameKey.String("My Service"),
 	)
 
 	// Assumes the NEW_RELIC_API_KEY environment variable contains your New

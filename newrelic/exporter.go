@@ -11,13 +11,13 @@ import (
 
 	"go.opentelemetry.io/otel/api/global"
 	"go.opentelemetry.io/otel/api/metric"
-	"go.opentelemetry.io/otel/api/standard"
 	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 	"go.opentelemetry.io/otel/sdk/metric/controller/push"
 	"go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/semconv"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic/internal/transform"
@@ -107,7 +107,7 @@ func NewExportPipeline(service string, traceOpt []sdktrace.ProviderOption, pushO
 
 	// Minimally default resource with a service name. This is overwritten if
 	// another is passed in traceOpt or pushOpt.
-	r := resource.New(standard.ServiceNameKey.String(service))
+	r := resource.New(semconv.ServiceNameKey.String(service))
 
 	tp, err := sdktrace.NewProvider(
 		append([]sdktrace.ProviderOption{
