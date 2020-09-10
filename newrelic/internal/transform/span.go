@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/standard"
 	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/sdk/export/trace"
+	"go.opentelemetry.io/otel/semconv"
 	"google.golang.org/grpc/codes"
 )
 
@@ -42,14 +42,14 @@ func Span(service string, span *trace.SpanData) telemetry.Span {
 	for iter := span.Resource.Iter(); iter.Next(); {
 		kv := iter.Label()
 		// Resource service name overrides the exporter.
-		if kv.Key == standard.ServiceNameKey {
+		if kv.Key == semconv.ServiceNameKey {
 			serviceName = kv.Value.AsString()
 		}
 		attrs[string(kv.Key)] = kv.Value.AsInterface()
 	}
 	for _, kv := range span.Attributes {
 		// Span service name overrides the Resource.
-		if kv.Key == standard.ServiceNameKey {
+		if kv.Key == semconv.ServiceNameKey {
 			serviceName = kv.Value.AsString()
 		}
 		attrs[string(kv.Key)] = kv.Value.AsInterface()
