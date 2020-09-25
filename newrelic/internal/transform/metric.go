@@ -5,6 +5,7 @@ package transform
 
 import (
 	"errors"
+	"fmt"
 
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 
@@ -25,14 +26,30 @@ var ErrUnimplementedAgg = errors.New("unimplemented aggregation")
 func Record(service string, record metricsdk.Record) (telemetry.Metric, error) {
 	desc := record.Descriptor()
 	attrs := attributes(service, record.Resource(), desc, record.Labels())
-	record.Aggregation()
 	switch a := record.Aggregation().(type) {
 	case aggregation.MinMaxSumCount:
 		return minMaxSumCount(desc, attrs, a)
 	case aggregation.Sum:
 		return sum(desc, attrs, a)
+	case aggregation.LastValue:
+		return lastValue(desc, attrs, a)
 	}
-	return nil, ErrUnimplementedAgg
+	return nil, fmt.Errorf("%w: %T", ErrUnimplementedAgg, record.Aggregation())
+}
+
+// lastValue transforms a LastValue Aggregation into a Gauge Metric.
+func lastValue(desc *metric.Descriptor, attrs map[string]interface{}, a aggregation.LastValue) (telemetry.Metric, error) {
+	v, t, err := a.LastValue()
+	if err != nil {
+		return nil, err
+	}
+
+	return telemetry.Gauge{
+		Name:       desc.Name(),
+		Attributes: attrs,
+		Value:      v.CoerceToFloat64(desc.NumberKind()),
+		Timestamp:  t,
+	}, nil
 }
 
 // sum transforms a Sum Aggregation into a Count Metric.

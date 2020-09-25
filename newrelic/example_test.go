@@ -30,11 +30,9 @@ func ExampleNewExporter() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tp, err := trace.NewProvider(trace.WithSyncer(exporter))
-	if err != nil {
-		log.Fatal(err)
-	}
-	global.SetTraceProvider(tp)
+	global.SetTracerProvider(
+		trace.NewTracerProvider(trace.WithSyncer(exporter)),
+	)
 }
 
 func ExampleNewExportPipeline() {
@@ -48,10 +46,10 @@ func ExampleNewExportPipeline() {
 	// Relic Insights insert API key. This will error if it does not.
 	traceProvider, controller, err := newrelic.NewExportPipeline(
 		"My Service",
-		[]trace.ProviderOption{
+		[]trace.TracerProviderOption{
 			trace.WithConfig(trace.Config{
 				// Conservative sampler.
-				DefaultSampler: trace.ParentSample(trace.NeverSample()),
+				DefaultSampler: trace.ParentBased(trace.NeverSample()),
 				// Reduce span events.
 				MaxEventsPerSpan: 10,
 				Resource:         r,
@@ -68,8 +66,8 @@ func ExampleNewExportPipeline() {
 	}
 	defer controller.Stop()
 
-	global.SetTraceProvider(traceProvider)
-	global.SetMeterProvider(controller.Provider())
+	global.SetTracerProvider(traceProvider)
+	global.SetMeterProvider(controller.MeterProvider())
 }
 
 func ExampleInstallNewPipeline() {

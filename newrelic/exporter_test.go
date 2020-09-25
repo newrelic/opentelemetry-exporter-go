@@ -41,7 +41,6 @@ func TestNilExporter(t *testing.T) {
 	span := &trace.SpanData{}
 	var e *Exporter
 
-	e.ExportSpan(context.Background(), span)
 	e.ExportSpans(context.Background(), []*trace.SpanData{span})
 }
 
@@ -153,12 +152,9 @@ func TestEndToEndTracer(t *testing.T) {
 		t.Fatalf("failed to instantiate exporter: %v", err)
 	}
 
-	traceProvider, err := sdktrace.NewProvider(
+	traceProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(e, sdktrace.WithBatchTimeout(15), sdktrace.WithMaxExportBatchSize(10)),
 	)
-	if err != nil {
-		t.Fatalf("failed to instantiate trace provider: %v", err)
-	}
 
 	tracer := traceProvider.Tracer("test-tracer")
 
@@ -262,7 +258,7 @@ func TestEndToEndMeter(t *testing.T) {
 	pusher.Start()
 
 	ctx := context.Background()
-	meter := pusher.Provider().Meter("test-meter")
+	meter := pusher.MeterProvider().Meter("test-meter")
 
 	newInt64ObserverCallback := func(v int64) metricapi.Int64ObserverFunc {
 		return func(ctx context.Context, result metricapi.Int64ObserverResult) { result.Observe(v) }
@@ -337,11 +333,13 @@ func TestEndToEndMeter(t *testing.T) {
 
 	// Flush and close.
 	pusher.Stop()
-	e.harvester.HarvestNow(ctx)
+	if err := e.Shutdown(ctx); err != nil {
+		t.Fatalf("error shutting down: %v", err)
+	}
 
 	gotMetrics := mockt.Metrics()
 	if got, want := len(gotMetrics), len(instruments); got != want {
-		t.Fatalf("expecting %d spans, got %d", want, got)
+		t.Fatalf("expecting %d metrics, got %d", want, got)
 	}
 	seen := make(map[string]struct{}, len(instruments))
 	for _, m := range gotMetrics {
@@ -356,13 +354,23 @@ func TestEndToEndMeter(t *testing.T) {
 		case metric.CounterKind:
 			if m.Type != "count" {
 				t.Errorf("metric type for %s: got %q, want \"counter\"", m.Name, m.Type)
+				continue
 			}
 			if got := m.Value.(float64); got != float64(want.val) {
 				t.Errorf("metric value for %s: got %g, want %d", m.Name, m.Value, want.val)
 			}
-		case metric.ValueRecorderKind, metric.ValueObserverKind:
+		case metric.ValueObserverKind:
+			if m.Type != "gauge" {
+				t.Errorf("metric type for %s: got %q, want \"gauge\"", m.Name, m.Type)
+				continue
+			}
+			if got := m.Value.(float64); got != float64(want.val) {
+				t.Errorf("metric value for %s: got %g, want %d", m.Name, m.Value, want.val)
+			}
+		case metric.ValueRecorderKind:
 			if m.Type != "summary" {
 				t.Errorf("metric type for %s: got %q, want \"summary\"", m.Name, m.Type)
+				continue
 			}
 			value := m.Value.(map[string]interface{})
 			if got := value["count"].(float64); got != 1 {
