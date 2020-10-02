@@ -7,7 +7,9 @@ package newrelic
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"strings"
 
 	"go.opentelemetry.io/otel/api/global"
 	"go.opentelemetry.io/otel/api/metric"
@@ -84,7 +86,7 @@ func NewExporter(service, apiKey string, options ...func(*telemetry.Config)) (*E
 //
 //    * EU metric API endpoint: metric-api.eu.newrelic.com/metric/v1
 //    * EU trace API endpoint: trace-api.eu.newrelic.com/trace/v1
-func NewExportPipeline(service string, traceOpt []sdktrace.ProviderOption, pushOpt []push.Option) (apitrace.Provider, *push.Controller, error) {
+func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption, pushOpt []push.Option) (apitrace.TracerProvider, *push.Controller, error) {
 	apiKey, ok := os.LookupEnv("NEW_RELIC_API_KEY")
 	if !ok {
 		return nil, nil, errors.New("missing New Relic API key")
@@ -109,16 +111,13 @@ func NewExportPipeline(service string, traceOpt []sdktrace.ProviderOption, pushO
 	// another is passed in traceOpt or pushOpt.
 	r := resource.New(semconv.ServiceNameKey.String(service))
 
-	tp, err := sdktrace.NewProvider(
-		append([]sdktrace.ProviderOption{
+	tp := sdktrace.NewTracerProvider(
+		append([]sdktrace.TracerProviderOption{
 			sdktrace.WithSyncer(exporter),
 			sdktrace.WithResource(r),
 		},
 			traceOpt...)...,
 	)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	pusher := push.New(
 		basic.New(simple.NewWithExactDistribution(), exporter),
@@ -156,30 +155,33 @@ func InstallNewPipeline(service string) (*push.Controller, error) {
 		return nil, err
 	}
 
-	global.SetTraceProvider(tp)
-	global.SetMeterProvider(controller.Provider())
+	global.SetTracerProvider(tp)
+	global.SetMeterProvider(controller.MeterProvider())
 	return controller, nil
 }
 
 var (
-	_ exporttrace.SpanSyncer  = (*Exporter)(nil)
-	_ exporttrace.SpanBatcher = (*Exporter)(nil)
-	_ exportmetric.Exporter   = (*Exporter)(nil)
+	_ exporttrace.SpanExporter = (*Exporter)(nil)
+	_ exportmetric.Exporter    = (*Exporter)(nil)
 )
 
-// ExportSpans exports multiple spans to New Relic.
-func (e *Exporter) ExportSpans(ctx context.Context, spans []*exporttrace.SpanData) {
-	for _, s := range spans {
-		e.ExportSpan(ctx, s)
-	}
-}
-
-// ExportSpan exports a span to New Relic.
-func (e *Exporter) ExportSpan(ctx context.Context, span *exporttrace.SpanData) {
+// ExportSpans exports span data to New Relic.
+func (e *Exporter) ExportSpans(ctx context.Context, spans []*exporttrace.SpanData) error {
 	if nil == e {
-		return
+		return nil
 	}
-	e.harvester.RecordSpan(transform.Span(e.serviceName, span))
+
+	var errs []string
+	for _, s := range spans {
+		if err := e.harvester.RecordSpan(transform.Span(e.serviceName, s)); err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("export span: %s", strings.Join(errs, ", "))
+	}
+	return nil
 }
 
 // Export exports metrics to New Relic.
@@ -196,4 +198,9 @@ func (e *Exporter) Export(_ context.Context, cps exportmetric.CheckpointSet) err
 
 func (e *Exporter) ExportKindFor(_ *metric.Descriptor, _ aggregation.Kind) exportmetric.ExportKind {
 	return exportmetric.DeltaExporter
+}
+
+func (e *Exporter) Shutdown(ctx context.Context) error {
+	e.harvester.HarvestNow(ctx)
+	return nil
 }
