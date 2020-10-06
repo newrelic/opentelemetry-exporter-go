@@ -7,25 +7,18 @@ traces and the latest metric instruments (as of v0.8 of Open Telemetry) are supp
 Example use:
 
 ```go
-import (
-	"log"
-	"os"
+import "github.com/newrelic/opentelemetry-exporter-go/newrelic"
 
-	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
-	"go.opentelemetry.io/otel/api/global"
-	"go.opentelemetry.io/otel/sdk/trace"
-)
+func main() {
+	// Assumes the NEW_RELIC_API_KEY environment variable contains your New
+	// Relic Insights insert API key. This will error if it does not.
+	controller, err := newrelic.InstallNewPipeline("My Service")
+	if err != nil {
+		panic(err)
+	}
+	defer controller.Stop()
 
-func initTracer() {
-	exporter, err := newrelic.NewExporter("My Service", os.Getenv("NEW_RELIC_API_KEY"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	tp, err := trace.NewProvider(trace.WithSyncer(exporter))
-	if err != nil {
-		log.Fatal(err)
-	}
-	global.SetTraceProvider(tp)
+	/*...*/
 }
 ```
 
