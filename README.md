@@ -2,58 +2,53 @@
 
 The `"github.com/newrelic/opentelemetry-exporter-go/newrelic"` package
 provides an exporter for sending OpenTelemetry data to New Relic.  Currently,
-traces and the latest metric instruments (as of v0.8 of Open Telemetry) are supported.
+traces and the latest metric instruments (as of v0.12 of Open Telemetry) are
+supported.
 
 Example use:
 
 ```go
-import (
-	"log"
-	"os"
+import "github.com/newrelic/opentelemetry-exporter-go/newrelic"
 
-	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
-	"go.opentelemetry.io/otel/api/global"
-	"go.opentelemetry.io/otel/sdk/trace"
-)
+func main() {
+	// Assumes the NEW_RELIC_API_KEY environment variable contains your New
+	// Relic Insights insert API key. This will error if it does not.
+	controller, err := newrelic.InstallNewPipeline("My Service")
+	if err != nil {
+		panic(err)
+	}
+	defer controller.Stop()
 
-func initTracer() {
-	exporter, err := newrelic.NewExporter("My Service", os.Getenv("NEW_RELIC_API_KEY"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	tp, err := trace.NewProvider(trace.WithSyncer(exporter))
-	if err != nil {
-		log.Fatal(err)
-	}
-	global.SetTraceProvider(tp)
+	/*...*/
 }
 ```
 
 ## Disclaimer
+
 This exporter is built with the alpha release of OpenTelemetry Go client. Due
 to the rapid development of OpenTelemetry, this exporter does not guarantee
-compatibility with future releases of the OpenTelemetry APIs.  Additionally,
-this exporter may introduce changes that are not backwards compatible without a major
-version increment.  We will strive to ensure backwards compatibility when a stable version
-of the OpenTelemetry Go client is released.
+compatibility with future releases of the OpenTelemetry APIs. Additionally,
+this exporter may introduce changes that are not backwards compatible without a
+major version increment. We will strive to ensure backwards compatibility when
+a stable version of the OpenTelemetry Go client is released.
 
 ## Find and use your data
 
 For tips on how to find and query your data in New Relic, see [Find trace/span data](https://docs.newrelic.com/docs/understand-dependencies/distributed-tracing/trace-api/introduction-trace-api#view-data).
-
 
 For general querying information, see:
 - [Query New Relic data](https://docs.newrelic.com/docs/using-new-relic/data/understand-data/query-new-relic-data)
 - [Intro to NRQL](https://docs.newrelic.com/docs/query-data/nrql-new-relic-query-language/getting-started/introduction-nrql)
 
 ## Licensing
+
 The New Relic Go OpenTelemetry exporter is licensed under the Apache 2.0 License.
 The New Relic Go OpenTelemetry exporter also uses source code from third party
 libraries. Full details on which libraries are used and the terms under which
 they are licensed can be found in the third party notices document.
 
-
 ## Contributing
+
 Full details are available in our CONTRIBUTING.md file. We'd love to get your
 contributions to improve the Go OpenTelemetry exporter! Keep in mind when you
 submit your pull request, you'll need to sign the CLA via the click-through
@@ -62,8 +57,8 @@ execute our corporate CLA, which is required if your contribution is on
 behalf of a company, or if you have any questions, please drop us an email at
 open-source@newrelic.com.
 
-
 ## Limitations
+
 The New Relic Telemetry APIs are rate limited. Please reference the
 documentation for [New Relic Metrics
 API](https://docs.newrelic.com/docs/introduction-new-relic-metric-api) and [New
