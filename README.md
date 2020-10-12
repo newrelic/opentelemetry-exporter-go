@@ -57,6 +57,7 @@ If the issue has been confirmed as a bug or is a feature request, file a GitHub 
 * [New Relic University](https://learn.newrelic.com/): A range of online training for New Relic users of every level
 
 ## Privacy
+
 At New Relic we take your privacy and the security of your information seriously, and are committed to protecting your information. We must emphasize the importance of not sharing personal data in public forums, and ask all users to scrub logs and diagnostic information for sensitive information, whether personal, proprietary, or otherwise.
 
 We define “Personal Data” as any information relating to an identified or identifiable individual, including, for example, your name, phone number, post code or zip code, Device ID, IP address, and email address.
