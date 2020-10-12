@@ -10,10 +10,10 @@ import (
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/api/trace"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/label"
 	exporttrace "go.opentelemetry.io/otel/sdk/export/trace"
 	"go.opentelemetry.io/otel/sdk/resource"
-	"google.golang.org/grpc/codes"
 )
 
 const (
@@ -93,7 +93,7 @@ func TestTransformSpans(t *testing.T) {
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
 				},
-				StatusCode:    codes.ResourceExhausted,
+				StatusCode:    codes.Error,
 				StatusMessage: "ResourceExhausted",
 				StartTime:     now,
 				EndTime:       now.Add(2 * time.Second),
@@ -109,7 +109,7 @@ func TestTransformSpans(t *testing.T) {
 				Attributes: map[string]interface{}{
 					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
 					collectorNameAttrKey:           collectorNameAttrValue,
-					errorCodeAttrKey:               uint32(codes.ResourceExhausted),
+					errorCodeAttrKey:               uint32(codes.Error),
 					errorMessageAttrKey:            "ResourceExhausted",
 				},
 			},
@@ -167,7 +167,7 @@ func TestTransformSpans(t *testing.T) {
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
 				},
-				StatusCode:    codes.ResourceExhausted,
+				StatusCode:    codes.Error,
 				StatusMessage: "ResourceExhausted",
 				StartTime:     now,
 				EndTime:       now.Add(2 * time.Second),
@@ -187,7 +187,7 @@ func TestTransformSpans(t *testing.T) {
 					"x0":                           true,
 					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
 					collectorNameAttrKey:           collectorNameAttrValue,
-					errorCodeAttrKey:               uint32(codes.ResourceExhausted),
+					errorCodeAttrKey:               uint32(codes.Error),
 					errorMessageAttrKey:            "ResourceExhausted",
 				},
 			},
