@@ -56,7 +56,7 @@ func Span(service string, span *trace.SpanData) telemetry.Span {
 	}
 
 	if span.SpanKind != apitrace.SpanKindUnspecified {
-		attrs["span.kind"] = strings.ToUpper(span.SpanKind.String())
+		attrs["span.kind"] = strings.ToLower(span.SpanKind.String())
 	}
 
 	// New Relic registered attributes to identify where this data came from.
