@@ -9,9 +9,9 @@ import (
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	apitrace "go.opentelemetry.io/otel/api/trace"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/sdk/export/trace"
 	"go.opentelemetry.io/otel/semconv"
-	"google.golang.org/grpc/codes"
 )
 
 // Span transforms an OpenTelemetry SpanData into a New Relic Span for a
@@ -31,8 +31,8 @@ func Span(service string, span *trace.SpanData) telemetry.Span {
 		numAttrs++
 	}
 
-	// Consider everything other than an OK as an error.
-	isError := span.StatusCode != codes.OK
+	// Status of Ok and Unset are not considered errors.
+	isError := span.StatusCode == codes.Error
 	if isError {
 		numAttrs += 2
 	}
