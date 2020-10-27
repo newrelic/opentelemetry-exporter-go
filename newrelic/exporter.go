@@ -72,11 +72,11 @@ func NewExporter(service, apiKey string, options ...func(*telemetry.Config)) (*E
 // following environment variables to configure the exporter installed in the
 // pipeline:
 //
-//    * `NEW_RELIC_API_KEY`: New Relic Insights insert API key.
+//    * `NEW_RELIC_API_KEY`: New Relic Event API key.
 //    * `NEW_RELIC_METRIC_URL`: Override URL to New Relic metric endpoint.
 //    * `NEW_RELIC_TRACE_URL`: Override URL to New Relic trace endpoint.
 //
-// More information about the New Relic Insights insert API key can be found
+// More information about the New Relic Event API key can be found
 // here: https://docs.newrelic.com/docs/apis/get-started/intro-apis/types-new-relic-api-keys#event-insert-key.
 //
 // The exporter will send telemetry to the default New Relic metric and trace
@@ -135,11 +135,11 @@ func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption,
 // following environment variables to configure the exporter installed in the
 // pipeline:
 //
-//    * `NEW_RELIC_API_KEY`: New Relic Insights insert API key.
+//    * `NEW_RELIC_API_KEY`: New Relic Event API key.
 //    * `NEW_RELIC_METRIC_URL`: Override URL to New Relic metric endpoint.
 //    * `NEW_RELIC_TRACE_URL`: Override URL to New Relic trace endpoint.
 //
-// More information about the New Relic Insights insert API key can be found
+// More information about the New Relic Event API key can be found
 // here: https://docs.newrelic.com/docs/apis/get-started/intro-apis/types-new-relic-api-keys#event-insert-key.
 //
 // The exporter will send telemetry to the default New Relic metric and trace
