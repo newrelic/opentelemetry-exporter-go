@@ -244,7 +244,7 @@ func TestTransformSpans(t *testing.T) {
 				ServiceName: "resource service",
 				Attributes: map[string]interface{}{
 					"service.name":                 "resource service",
-					"span.kind":                    "CLIENT",
+					"span.kind":                    "client",
 					instrumentationProviderAttrKey: instrumentationProviderAttrValue,
 					collectorNameAttrKey:           collectorNameAttrValue,
 				},
