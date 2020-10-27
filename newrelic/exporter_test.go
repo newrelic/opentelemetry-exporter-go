@@ -152,24 +152,24 @@ func TestEndToEndTracer(t *testing.T) {
 		t.Fatalf("failed to instantiate exporter: %v", err)
 	}
 
-	traceProvider := sdktrace.NewTracerProvider(
+	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(e, sdktrace.WithBatchTimeout(15), sdktrace.WithMaxExportBatchSize(10)),
 	)
 
-	tracer := traceProvider.Tracer("test-tracer")
+	tracer := tracerProvider.Tracer("test-tracer")
 
-	var decend func(context.Context, int)
-	decend = func(ctx context.Context, n int) {
+	var descend func(context.Context, int)
+	descend = func(ctx context.Context, n int) {
 		if n <= 0 {
 			return
 		}
 		depth := numSpans - n
 		ctx, span := tracer.Start(ctx, fmt.Sprintf("Span %d", depth))
 		span.SetAttributes(label.Int("depth", depth))
-		decend(ctx, n-1)
+		descend(ctx, n-1)
 		span.End()
 	}
-	decend(context.Background(), numSpans)
+	descend(context.Background(), numSpans)
 
 	// Wait >2 cycles.
 	<-time.After(40 * time.Millisecond)
