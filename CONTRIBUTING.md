@@ -37,6 +37,8 @@ This Open Source Software can be used in a large number of environments, all of 
 ## Pull Request Guidelines
 Before we can accept a pull request, you must sign our [Contributor Licensing Agreement](#contributor-license-agreement-cla), if you have not already done so. This grants us the right to use your code under the same Apache 2.0 license as we use for this project in general.
 
+If this is a notable change, please include a very short summary of your work in the "Unreleased" section of [CHANGELOG.md](./CHANGELOG.MD).
+
 ## Coding Style Guidelines
 Our code base is formatted according to [gofmt](https://golang.org/cmd/gofmt/) and linted with [golint](https://github.com/golang/lint).
 
