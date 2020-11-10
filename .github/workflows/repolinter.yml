@@ -1,3 +1,6 @@
+# Copyright 2020 New Relic Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 # NOTE: This file should always be named `repolinter.yml` to allow
 # workflow_dispatch to work properly
 name: Repolinter Action
