@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/sdk/export/trace"
 	"go.opentelemetry.io/otel/semconv"
+	apitrace "go.opentelemetry.io/otel/trace"
 )
 
 // Span transforms an OpenTelemetry SpanData into a New Relic Span for a
