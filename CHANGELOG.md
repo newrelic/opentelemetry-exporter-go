@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade `go.opentelemetry.io/otel*` to v0.14.0. (#40)
+
 ## [0.13.0] - 2020-10-28
 ### Added
 - Support for metrics (#10)
