@@ -11,15 +11,15 @@ import (
 	"os"
 	"strings"
 
-	"go.opentelemetry.io/otel/api/global"
-	"go.opentelemetry.io/otel/api/metric"
-	apitrace "go.opentelemetry.io/otel/api/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 	"go.opentelemetry.io/otel/sdk/metric/controller/push"
 	"go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/semconv"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic/internal/transform"
@@ -86,7 +86,7 @@ func NewExporter(service, apiKey string, options ...func(*telemetry.Config)) (*E
 //
 //    * EU metric API endpoint: metric-api.eu.newrelic.com/metric/v1
 //    * EU trace API endpoint: trace-api.eu.newrelic.com/trace/v1
-func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption, pushOpt []push.Option) (apitrace.TracerProvider, *push.Controller, error) {
+func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption, pushOpt []push.Option) (trace.TracerProvider, *push.Controller, error) {
 	apiKey, ok := os.LookupEnv("NEW_RELIC_API_KEY")
 	if !ok {
 		return nil, nil, errors.New("missing New Relic API key")
@@ -109,7 +109,7 @@ func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption,
 
 	// Minimally default resource with a service name. This is overwritten if
 	// another is passed in traceOpt or pushOpt.
-	r := resource.New(semconv.ServiceNameKey.String(service))
+	r := resource.NewWithAttributes(semconv.ServiceNameKey.String(service))
 
 	tp := sdktrace.NewTracerProvider(
 		append([]sdktrace.TracerProviderOption{
@@ -155,8 +155,8 @@ func InstallNewPipeline(service string) (*push.Controller, error) {
 		return nil, err
 	}
 
-	global.SetTracerProvider(tp)
-	global.SetMeterProvider(controller.MeterProvider())
+	otel.SetTracerProvider(tp)
+	otel.SetMeterProvider(controller.MeterProvider())
 	return controller, nil
 }
 
@@ -197,7 +197,7 @@ func (e *Exporter) Export(_ context.Context, cps exportmetric.CheckpointSet) err
 }
 
 func (e *Exporter) ExportKindFor(_ *metric.Descriptor, _ aggregation.Kind) exportmetric.ExportKind {
-	return exportmetric.DeltaExporter
+	return exportmetric.DeltaExportKind
 }
 
 func (e *Exporter) Shutdown(ctx context.Context) error {

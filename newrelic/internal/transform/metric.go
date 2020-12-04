@@ -7,11 +7,12 @@ import (
 	"errors"
 	"fmt"
 
+	"go.opentelemetry.io/otel/metric/number"
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/metric"
 	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/export/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 )
@@ -68,7 +69,7 @@ func sum(desc *metric.Descriptor, attrs map[string]interface{}, a aggregation.Su
 
 // minMaxSumCountValue returns the values of the MinMaxSumCount Aggregation
 // as discret values or any error returned from parsing any of the values.
-func minMaxSumCountValues(a aggregation.MinMaxSumCount) (min, max, sum metric.Number, count int64, err error) {
+func minMaxSumCountValues(a aggregation.MinMaxSumCount) (min, max, sum number.Number, count int64, err error) {
 	if min, err = a.Min(); err != nil {
 		return
 	}

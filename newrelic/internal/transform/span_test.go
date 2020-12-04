@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/label"
 	exporttrace "go.opentelemetry.io/otel/sdk/export/trace"
 	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	sampleTraceID, _  = trace.IDFromHex(sampleTraceIDString)
+	sampleTraceID, _  = trace.TraceIDFromHex(sampleTraceIDString)
 	sampleSpanID, _   = trace.SpanIDFromHex(sampleSpanIDString)
 	sampleParentID, _ = trace.SpanIDFromHex(sampleParentIDString)
 )
@@ -202,7 +202,7 @@ func TestTransformSpans(t *testing.T) {
 				StartTime: now,
 				EndTime:   now.Add(2 * time.Second),
 				Name:      "mySpan",
-				Resource: resource.New(
+				Resource: resource.NewWithAttributes(
 					label.String("service.name", "resource service"),
 				),
 			},
@@ -231,7 +231,7 @@ func TestTransformSpans(t *testing.T) {
 				StartTime: now,
 				EndTime:   now.Add(2 * time.Second),
 				Name:      "mySpan",
-				Resource: resource.New(
+				Resource: resource.NewWithAttributes(
 					label.String("service.name", "resource service"),
 				),
 			},
@@ -260,7 +260,7 @@ func TestTransformSpans(t *testing.T) {
 				StartTime: now,
 				EndTime:   now.Add(2 * time.Second),
 				Name:      "mySpan",
-				Resource: resource.New(
+				Resource: resource.NewWithAttributes(
 					label.String("service.name", "resource service"),
 				),
 				Attributes: []label.KeyValue{

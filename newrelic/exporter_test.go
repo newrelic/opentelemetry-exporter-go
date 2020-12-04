@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/metric"
-	metricapi "go.opentelemetry.io/otel/api/metric"
 	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/number"
 	"go.opentelemetry.io/otel/sdk/export/trace"
 	"go.opentelemetry.io/otel/sdk/metric/controller/push"
 	integrator "go.opentelemetry.io/otel/sdk/metric/processor/basic"
@@ -213,23 +213,23 @@ func TestEndToEndTracer(t *testing.T) {
 func TestEndToEndMeter(t *testing.T) {
 	serviceName := "opentelemetry-service"
 	type data struct {
-		iKind metric.Kind
-		nKind metric.NumberKind
+		iKind metric.InstrumentKind
+		nKind number.Kind
 		val   int64
 	}
 	instruments := map[string]data{
-		"test-int64-counter":                {metric.CounterKind, metric.Int64NumberKind, 1},
-		"test-float64-counter":              {metric.CounterKind, metric.Float64NumberKind, 1},
-		"test-int64-up-down-counter":        {metric.UpDownCounterKind, metric.Int64NumberKind, 1},
-		"test-float64-up-down-counter":      {metric.UpDownCounterKind, metric.Float64NumberKind, 1},
-		"test-int64-measure":                {metric.ValueRecorderKind, metric.Int64NumberKind, 2},
-		"test-float64-measure":              {metric.ValueRecorderKind, metric.Float64NumberKind, 2},
-		"test-int64-observer":               {metric.ValueObserverKind, metric.Int64NumberKind, 3},
-		"test-float64-observer":             {metric.ValueObserverKind, metric.Float64NumberKind, 3},
-		"test-int64-sum-observer":           {metric.SumObserverKind, metric.Int64NumberKind, 3},
-		"test-float64-sum-observer":         {metric.SumObserverKind, metric.Float64NumberKind, 3},
-		"test-int64-up-down-sum-observer":   {metric.UpDownSumObserverKind, metric.Int64NumberKind, 3},
-		"test-float64-up-down-sum-observer": {metric.UpDownSumObserverKind, metric.Float64NumberKind, 3},
+		"test-int64-counter":                {metric.CounterInstrumentKind, number.Int64Kind, 1},
+		"test-float64-counter":              {metric.CounterInstrumentKind, number.Float64Kind, 1},
+		"test-int64-up-down-counter":        {metric.UpDownCounterInstrumentKind, number.Int64Kind, 1},
+		"test-float64-up-down-counter":      {metric.UpDownCounterInstrumentKind, number.Float64Kind, 1},
+		"test-int64-measure":                {metric.ValueRecorderInstrumentKind, number.Int64Kind, 2},
+		"test-float64-measure":              {metric.ValueRecorderInstrumentKind, number.Float64Kind, 2},
+		"test-int64-observer":               {metric.ValueObserverInstrumentKind, number.Int64Kind, 3},
+		"test-float64-observer":             {metric.ValueObserverInstrumentKind, number.Float64Kind, 3},
+		"test-int64-sum-observer":           {metric.SumObserverInstrumentKind, number.Int64Kind, 3},
+		"test-float64-sum-observer":         {metric.SumObserverInstrumentKind, number.Float64Kind, 3},
+		"test-int64-up-down-sum-observer":   {metric.UpDownSumObserverInstrumentKind, number.Int64Kind, 3},
+		"test-float64-up-down-sum-observer": {metric.UpDownSumObserverInstrumentKind, number.Float64Kind, 3},
 	}
 
 	mockt := &MockTransport{
@@ -260,66 +260,66 @@ func TestEndToEndMeter(t *testing.T) {
 	ctx := context.Background()
 	meter := pusher.MeterProvider().Meter("test-meter")
 
-	newInt64ObserverCallback := func(v int64) metricapi.Int64ObserverFunc {
-		return func(ctx context.Context, result metricapi.Int64ObserverResult) { result.Observe(v) }
+	newInt64ObserverCallback := func(v int64) metric.Int64ObserverFunc {
+		return func(ctx context.Context, result metric.Int64ObserverResult) { result.Observe(v) }
 	}
-	newFloat64ObserverCallback := func(v float64) metricapi.Float64ObserverFunc {
-		return func(ctx context.Context, result metricapi.Float64ObserverResult) { result.Observe(v) }
+	newFloat64ObserverCallback := func(v float64) metric.Float64ObserverFunc {
+		return func(ctx context.Context, result metric.Float64ObserverResult) { result.Observe(v) }
 	}
 
 	for name, data := range instruments {
 		switch data.iKind {
-		case metric.CounterKind:
+		case metric.CounterInstrumentKind:
 			switch data.nKind {
-			case metric.Int64NumberKind:
-				metricapi.Must(meter).NewInt64Counter(name).Add(ctx, data.val)
-			case metric.Float64NumberKind:
-				metricapi.Must(meter).NewFloat64Counter(name).Add(ctx, float64(data.val))
+			case number.Int64Kind:
+				metric.Must(meter).NewInt64Counter(name).Add(ctx, data.val)
+			case number.Float64Kind:
+				metric.Must(meter).NewFloat64Counter(name).Add(ctx, float64(data.val))
 			default:
 				t.Fatal("unsupported number testing kind", data.nKind.String())
 			}
-		case metric.UpDownCounterKind:
+		case metric.UpDownCounterInstrumentKind:
 			switch data.nKind {
-			case metric.Int64NumberKind:
-				metricapi.Must(meter).NewInt64UpDownCounter(name).Add(ctx, data.val)
-			case metric.Float64NumberKind:
-				metricapi.Must(meter).NewFloat64UpDownCounter(name).Add(ctx, float64(data.val))
+			case number.Int64Kind:
+				metric.Must(meter).NewInt64UpDownCounter(name).Add(ctx, data.val)
+			case number.Float64Kind:
+				metric.Must(meter).NewFloat64UpDownCounter(name).Add(ctx, float64(data.val))
 			default:
 				t.Fatal("unsupported number testing kind", data.nKind.String())
 			}
-		case metric.ValueRecorderKind:
+		case metric.ValueRecorderInstrumentKind:
 			switch data.nKind {
-			case metric.Int64NumberKind:
-				metricapi.Must(meter).NewInt64ValueRecorder(name).Record(ctx, data.val)
-			case metric.Float64NumberKind:
-				metricapi.Must(meter).NewFloat64ValueRecorder(name).Record(ctx, float64(data.val))
+			case number.Int64Kind:
+				metric.Must(meter).NewInt64ValueRecorder(name).Record(ctx, data.val)
+			case number.Float64Kind:
+				metric.Must(meter).NewFloat64ValueRecorder(name).Record(ctx, float64(data.val))
 			default:
 				t.Fatal("unsupported number testing kind", data.nKind.String())
 			}
-		case metric.ValueObserverKind:
+		case metric.ValueObserverInstrumentKind:
 			switch data.nKind {
-			case metric.Int64NumberKind:
-				metricapi.Must(meter).NewInt64ValueObserver(name, newInt64ObserverCallback(data.val))
-			case metric.Float64NumberKind:
-				metricapi.Must(meter).NewFloat64ValueObserver(name, newFloat64ObserverCallback(float64(data.val)))
+			case number.Int64Kind:
+				metric.Must(meter).NewInt64ValueObserver(name, newInt64ObserverCallback(data.val))
+			case number.Float64Kind:
+				metric.Must(meter).NewFloat64ValueObserver(name, newFloat64ObserverCallback(float64(data.val)))
 			default:
 				t.Fatal("unsupported number testing kind", data.nKind.String())
 			}
-		case metric.SumObserverKind:
+		case metric.SumObserverInstrumentKind:
 			switch data.nKind {
-			case metric.Int64NumberKind:
-				metricapi.Must(meter).NewInt64SumObserver(name, newInt64ObserverCallback(data.val))
-			case metric.Float64NumberKind:
-				metricapi.Must(meter).NewFloat64SumObserver(name, newFloat64ObserverCallback(float64(data.val)))
+			case number.Int64Kind:
+				metric.Must(meter).NewInt64SumObserver(name, newInt64ObserverCallback(data.val))
+			case number.Float64Kind:
+				metric.Must(meter).NewFloat64SumObserver(name, newFloat64ObserverCallback(float64(data.val)))
 			default:
 				t.Fatal("unsupported number testing kind", data.nKind.String())
 			}
-		case metric.UpDownSumObserverKind:
+		case metric.UpDownSumObserverInstrumentKind:
 			switch data.nKind {
-			case metric.Int64NumberKind:
-				metricapi.Must(meter).NewInt64UpDownSumObserver(name, newInt64ObserverCallback(data.val))
-			case metric.Float64NumberKind:
-				metricapi.Must(meter).NewFloat64UpDownSumObserver(name, newFloat64ObserverCallback(float64(data.val)))
+			case number.Int64Kind:
+				metric.Must(meter).NewInt64UpDownSumObserver(name, newInt64ObserverCallback(data.val))
+			case number.Float64Kind:
+				metric.Must(meter).NewFloat64UpDownSumObserver(name, newFloat64ObserverCallback(float64(data.val)))
 			default:
 				t.Fatal("unsupported number testing kind", data.nKind.String())
 			}
@@ -351,7 +351,7 @@ func TestEndToEndMeter(t *testing.T) {
 		seen[m.Name] = struct{}{}
 
 		switch want.iKind {
-		case metric.CounterKind:
+		case metric.CounterInstrumentKind:
 			if m.Type != "count" {
 				t.Errorf("metric type for %s: got %q, want \"counter\"", m.Name, m.Type)
 				continue
@@ -359,7 +359,7 @@ func TestEndToEndMeter(t *testing.T) {
 			if got := m.Value.(float64); got != float64(want.val) {
 				t.Errorf("metric value for %s: got %g, want %d", m.Name, m.Value, want.val)
 			}
-		case metric.ValueObserverKind:
+		case metric.ValueObserverInstrumentKind:
 			if m.Type != "gauge" {
 				t.Errorf("metric type for %s: got %q, want \"gauge\"", m.Name, m.Type)
 				continue
@@ -367,7 +367,7 @@ func TestEndToEndMeter(t *testing.T) {
 			if got := m.Value.(float64); got != float64(want.val) {
 				t.Errorf("metric value for %s: got %g, want %d", m.Name, m.Value, want.val)
 			}
-		case metric.ValueRecorderKind:
+		case metric.ValueRecorderInstrumentKind:
 			if m.Type != "summary" {
 				t.Errorf("metric type for %s: got %q, want \"summary\"", m.Name, m.Type)
 				continue

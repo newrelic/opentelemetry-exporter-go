@@ -10,7 +10,7 @@ import (
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
-	"go.opentelemetry.io/otel/api/global"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/label"
 	"go.opentelemetry.io/otel/sdk/metric/controller/push"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -30,14 +30,14 @@ func ExampleNewExporter() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	global.SetTracerProvider(
+	otel.SetTracerProvider(
 		trace.NewTracerProvider(trace.WithSyncer(exporter)),
 	)
 }
 
 func ExampleNewExportPipeline() {
 	// Include environment in resource.
-	r := resource.New(
+	r := resource.NewWithAttributes(
 		label.String("environment", "production"),
 		semconv.ServiceNameKey.String("My Service"),
 	)
@@ -66,8 +66,8 @@ func ExampleNewExportPipeline() {
 	}
 	defer controller.Stop()
 
-	global.SetTracerProvider(traceProvider)
-	global.SetMeterProvider(controller.MeterProvider())
+	otel.SetTracerProvider(traceProvider)
+	otel.SetMeterProvider(controller.MeterProvider())
 }
 
 func ExampleInstallNewPipeline() {
