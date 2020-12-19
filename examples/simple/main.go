@@ -11,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
@@ -46,8 +45,10 @@ func main() {
 		fmt.Printf("failed to instantiate New Relic OpenTelemetry exporter: %v\n", err)
 	}
 
-	// Create a tracer provider
 	ctx := context.Background()
+	defer exporter.Shutdown(ctx)
+
+	// Create a tracer provider
 	bsp := sdktrace.NewBatchSpanProcessor(exporter)
 	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(bsp))
 	defer func() { _ = tp.Shutdown(ctx) }()
@@ -125,6 +126,4 @@ func main() {
 		}(ctx)
 	}(ctx)
 
-	// Wait for the New Relic OpenTelemetry Exporter to send data to New Relic
-	time.Sleep(20 * time.Second)
 }
