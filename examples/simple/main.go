@@ -31,18 +31,20 @@ func main() {
 	// Create a New Relic OpenTelemetry Exporter
 	apiKey, ok := os.LookupEnv("NEW_RELIC_API_KEY")
 	if !ok {
-		fmt.Println("missing NEW_RELIC_API_KEY required for New Relic OpenTelemetry Exporter")
+		fmt.Println("Missing NEW_RELIC_API_KEY required for New Relic OpenTelemetry Exporter")
+		os.Exit(1)
 	}
 
 	exporter, err := newrelic.NewExporter(
-		"Sample OpenTelemetry Service",
+		"Simple OpenTelemetry Service",
 		apiKey,
 		telemetry.ConfigBasicErrorLogger(os.Stderr),
 		telemetry.ConfigBasicDebugLogger(os.Stderr),
 		telemetry.ConfigBasicAuditLogger(os.Stderr),
 	)
 	if err != nil {
-		fmt.Printf("failed to instantiate New Relic OpenTelemetry exporter: %v\n", err)
+		fmt.Printf("Failed to instantiate New Relic OpenTelemetry exporter: %v\n", err)
+		os.Exit(1)
 	}
 
 	ctx := context.Background()
