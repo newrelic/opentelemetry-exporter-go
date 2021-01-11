@@ -131,24 +131,35 @@ func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption,
 
 // InstallNewPipeline installs a New Relic exporter with default settings
 // in the global OpenTelemetry telemetry pipeline. It is the callers
-// responsibility to stop the returned push Controller. This function uses the
-// following environment variables to configure the exporter installed in the
-// pipeline:
-//
-//    * `NEW_RELIC_API_KEY`: New Relic Event API key.
+// responsibility to stop the returned push Controller. 
+// ## Prerequisites
+// To use this, make sure you have the following:
+//     * A [New Relic account](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/create-your-new-relic-account)
+//     * A [New Relic Insights insert key](https://docs.newrelic.com/docs/apis/get-started/intro-apis/types-new-relic-api-keys#insights-insert-key) 
+// ## Environment variables
+// This function uses the following environment variables to configure 
+// the exporter installed in the pipeline:
+//    * `NEW_RELIC_API_KEY`: New Relic Insights insert key.
 //    * `NEW_RELIC_METRIC_URL`: Override URL to New Relic metric endpoint.
 //    * `NEW_RELIC_TRACE_URL`: Override URL to New Relic trace endpoint.
-//
-// More information about the New Relic Event API key can be found
-// here: https://docs.newrelic.com/docs/apis/get-started/intro-apis/types-new-relic-api-keys#event-insert-key.
-//
 // The exporter will send telemetry to the default New Relic metric and trace
-// API endpoints in the United States. These can be overwritten with the above
-// environment variables. These are useful if you wish to send to our EU
-// endpoints:
-//
+// API endpoints in the United States:
+// * Traces: https://trace-api.newrelic.com/trace/v1
+// * Metrics: https://metric-api.newrelic.com/metric/v1
+// You can overwrite these with the above environment variables
+// to send data to our EU endpoints or to set up Infinite Tracing:
+// ### EU endpoints//
+// Here are the endpoints to use if you want to send data to the EU region:
 //    * EU metric API endpoint: metric-api.eu.newrelic.com/metric/v1
 //    * EU trace API endpoint: trace-api.eu.newrelic.com/trace/v1
+// ### Infinite Tracing endpoint
+// If you are setting up [Infinite Tracing](https://docs.newrelic.com/docs/understand-dependencies/distributed-tracing/infinite-tracing/introduction-infinite-tracing), you need to override the default trace endpoint 
+// and send telemetry data to the New Relic trace observer:
+// 1. Follow the steps in [Set up the trace observer](https://docs.newrelic.com/docs/understand-dependencies/distributed-tracing/infinite-tracing/set-trace-observer)
+// to get the value for YOUR_TRACE_OBSERVER_URL.
+// 2. Use the value of YOUR_TRACE_OBSERVER_URL for `NEW_RELIC_TRACE_URL`.
+// 3. Since you want New Relic to analyze all your traces, set OpenTelmetry to use the `AlwaysOn` sampler.
+// 
 func InstallNewPipeline(service string) (*push.Controller, error) {
 	tp, controller, err := NewExportPipeline(service, nil, nil)
 	if err != nil {
