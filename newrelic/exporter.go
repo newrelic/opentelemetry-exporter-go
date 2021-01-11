@@ -148,7 +148,7 @@ func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption,
 // * Metrics: https://metric-api.newrelic.com/metric/v1
 // You can overwrite these with the above environment variables
 // to send data to our EU endpoints or to set up Infinite Tracing:
-// ### EU endpoints//
+// ### EU endpoints
 // Here are the endpoints to use if you want to send data to the EU region:
 //    * EU metric API endpoint: metric-api.eu.newrelic.com/metric/v1
 //    * EU trace API endpoint: trace-api.eu.newrelic.com/trace/v1
