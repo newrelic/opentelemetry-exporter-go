@@ -69,7 +69,7 @@ func sum(desc *metric.Descriptor, attrs map[string]interface{}, a aggregation.Su
 
 // minMaxSumCountValue returns the values of the MinMaxSumCount Aggregation
 // as discret values or any error returned from parsing any of the values.
-func minMaxSumCountValues(a aggregation.MinMaxSumCount) (min, max, sum number.Number, count int64, err error) {
+func minMaxSumCountValues(a aggregation.MinMaxSumCount) (min, max, sum number.Number, count uint64, err error) {
 	if min, err = a.Min(); err != nil {
 		return
 	}

@@ -14,8 +14,8 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
-	"go.opentelemetry.io/otel/sdk/metric/controller/push"
-	"go.opentelemetry.io/otel/sdk/metric/processor/basic"
+	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
+	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/semconv"
@@ -68,7 +68,7 @@ func NewExporter(service, apiKey string, options ...func(*telemetry.Config)) (*E
 
 // NewExportPipeline creates a new OpenTelemetry telemetry pipeline using a
 // New Relic Exporter configured with default setting. It is the callers
-// responsibility to stop the returned push Controller. This function uses the
+// responsibility to stop the returned OTel Controller. This function uses the
 // following environment variables to configure the exporter installed in the
 // pipeline:
 //
@@ -86,7 +86,7 @@ func NewExporter(service, apiKey string, options ...func(*telemetry.Config)) (*E
 //
 //    * EU metric API endpoint: metric-api.eu.newrelic.com/metric/v1
 //    * EU trace API endpoint: trace-api.eu.newrelic.com/trace/v1
-func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption, pushOpt []push.Option) (trace.TracerProvider, *push.Controller, error) {
+func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption, cOpt []controller.Option) (trace.TracerProvider, *controller.Controller, error) {
 	apiKey, ok := os.LookupEnv("NEW_RELIC_API_KEY")
 	if !ok {
 		return nil, nil, errors.New("missing New Relic API key")
@@ -119,12 +119,14 @@ func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption,
 			traceOpt...)...,
 	)
 
-	pusher := push.New(
-		basic.New(simple.NewWithExactDistribution(), exporter),
-		exporter,
-		append([]push.Option{push.WithResource(r)}, pushOpt...)...,
+	pusher := controller.New(
+		processor.New(
+			simple.NewWithExactDistribution(),
+			exporter,
+		),
+		append([]controller.Option{controller.WithResource(r)}, cOpt...)...,
 	)
-	pusher.Start()
+	pusher.Start(context.TODO())
 
 	return tp, pusher, nil
 }
@@ -149,7 +151,7 @@ func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption,
 //
 //    * EU metric API endpoint: metric-api.eu.newrelic.com/metric/v1
 //    * EU trace API endpoint: trace-api.eu.newrelic.com/trace/v1
-func InstallNewPipeline(service string) (*push.Controller, error) {
+func InstallNewPipeline(service string) (*controller.Controller, error) {
 	tp, controller, err := NewExportPipeline(service, nil, nil)
 	if err != nil {
 		return nil, err
@@ -166,7 +168,7 @@ var (
 )
 
 // ExportSpans exports span data to New Relic.
-func (e *Exporter) ExportSpans(ctx context.Context, spans []*exporttrace.SpanData) error {
+func (e *Exporter) ExportSpans(ctx context.Context, spans []*exporttrace.SpanSnapshot) error {
 	if nil == e {
 		return nil
 	}

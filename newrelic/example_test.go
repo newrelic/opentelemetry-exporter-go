@@ -4,6 +4,7 @@
 package newrelic_test
 
 import (
+	"context"
 	"log"
 	"os"
 	"time"
@@ -12,7 +13,7 @@ import (
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/label"
-	"go.opentelemetry.io/otel/sdk/metric/controller/push"
+	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv"
@@ -55,16 +56,16 @@ func ExampleNewExportPipeline() {
 				Resource:         r,
 			}),
 		},
-		[]push.Option{
+		[]controller.Option{
 			// Increase push frequency.
-			push.WithPeriod(time.Second),
-			push.WithResource(r),
+			controller.WithCollectPeriod(time.Second),
+			controller.WithResource(r),
 		},
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer controller.Stop()
+	defer controller.Stop(context.Background())
 
 	otel.SetTracerProvider(traceProvider)
 	otel.SetMeterProvider(controller.MeterProvider())
@@ -77,5 +78,5 @@ func ExampleInstallNewPipeline() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer controller.Stop()
+	defer controller.Stop(context.Background())
 }
