@@ -10,6 +10,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
@@ -19,8 +20,8 @@ import (
 	"go.opentelemetry.io/otel/label"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/metric/controller/push"
-	"go.opentelemetry.io/otel/sdk/metric/processor/basic"
+	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
+	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
@@ -56,15 +57,21 @@ func main() {
 	defer func() { _ = tp.Shutdown(ctx) }()
 
 	// Create a meter provider
-	pusher := push.New(
-		basic.New(
+	pusher := controller.New(
+		processor.New(
 			simple.NewWithExactDistribution(),
 			exporter,
 		),
-		exporter,
 	)
-	pusher.Start()
-	defer pusher.Stop()
+
+	err = pusher.Start(ctx)
+	if err != nil {
+		log.Fatalf("failed to initialize metric controller: %v", err)
+	}
+	pusher.Start(ctx)
+
+	// Handle this error in a sensible manner where possible
+	defer func() { _ = pusher.Stop(ctx) }()
 
 	// Set global options
 	otel.SetTracerProvider(tp)
