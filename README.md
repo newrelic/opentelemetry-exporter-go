@@ -22,10 +22,10 @@ Here’s what you need to get started exporting OpenTelemetry spans and metrics 
 * Obtain an [Insights Event Insert API Key](https://docs.newrelic.com/docs/telemetry-data-platform/ingest-manage-data/ingest-apis/use-event-api-report-custom-events#) to send spans and metrics to New Relic.
 
 At this point, you have a couple of alternatives:
-* If you just want to see it working quickly, we have a tiny sample application set up for you [right here](http://html5zombo.com), already set up to export data to your New Relic account. Once you have it checked out, skip to [Running the sample application](#Running-the-sample-application) in this document.
-* If you’re starting from scratch, review the Go OpenTelemetry SIG’s [Getting Started Guide](https://github.com/krnowak/opentelemetry.io/blob/1d498b5c2d578cd1932cb822ef482fb3ef861c21/content/en/docs/go/getting-started.md). This excellent guide will walk you through creating a tiny sample application that generates spans and metrics, and outputs text to your terminal. Then [modify your sample application](#Modify-the-OpenTelemetry-sample-application) to send data to New Relic using the instructions below.
+* If you just want to see it working quickly, we have a tiny sample application set up for you [right here](examples/simple/main.go), already set up to export data to your New Relic account. Once you have it checked out, skip to [Running the sample application](#Running-the-sample-application) in this document.
+* If you’re starting from scratch, review the Go OpenTelemetry [Getting Started Guide](https://opentelemetry.io/docs/go/getting-started/). This excellent guide will walk you through creating a tiny sample application that generates spans and metrics, and outputs text to your terminal. Then [modify your sample application](#Modify-the-OpenTelemetry-sample-application) to send data to New Relic using the instructions below.
 
-Lastly, [view your data in the New Relic One UI](https://docs.google.com/document/d/1ZDpLHZo4XAxyy3EWgbNh1LulGjD2Ocotxql--Bv_nDU/edit?pli=1#heading=h.9ronvpfp47si). Very satisfying!
+Lastly, [view your data in the New Relic One UI](#View-your-data-in-the-New-Relic-One-UI). Very satisfying!
 
 ### **Modify the OpenTelemetry sample application**
 Here’s what to do to switch out the text-based exporter defined in the Go OpenTelemetry SIG’s [Getting Started Guide](https://github.com/krnowak/opentelemetry.io/blob/1d498b5c2d578cd1932cb822ef482fb3ef861c21/content/en/docs/go/getting-started.md) with the New Relic OpenTelemetry Exporter for Go.
@@ -40,22 +40,21 @@ Full source of this modified sample application is available in examples/simple/
 
 1. Replace the exporter import clause. Switch this:
 
-   ```
+   ```go
    "go.opentelemetry.io/otel/exporters/stdout"
    ```
 
    ...with this:
 
-   ```
+   ```go
    "github.com/newrelic/opentelemetry-exporter-go/newrelic"
    ```
 
 
 2. Rather than instantiate a ```stdout``` exporter, instantiate a ```newrelic``` exporter. Replace this:
 
-   ```
+   ```go
     exporter, err := stdout.NewExporter(
-        stdout.WithQuantiles([]float64{0.5, 0.9, 0.99}),
         stdout.WithPrettyPrint(),
     )
     if err != nil {
@@ -65,24 +64,27 @@ Full source of this modified sample application is available in examples/simple/
    ```
    ...with this:
 
-   ```
-    apiKey, ok := os.LookupEnv("NEW_RELIC_API_KEY")
-        if !ok {
-            fmt.Println("missing NEW_RELIC_API_KEY required for New Relic OpenTelemetry Exporter")
-    }
-    
-    exporter, err := newrelic.NewExporter(
-        "Sample OpenTelemetry Service",
-        apiKey,
-        telemetry.ConfigBasicErrorLogger(os.Stderr),
-        telemetry.ConfigBasicDebugLogger(os.Stderr),
-        telemetry.ConfigBasicAuditLogger(os.Stderr),
-    )
-    if err != nil {
-        fmt.Printf("failed to instantiate New Relic OpenTelemetry exporter: %v\n", err)
-    }
-    ctx := context.Background()
-    defer exporter.Shutdown(ctx)
+   ```go
+	apiKey, ok := os.LookupEnv("NEW_RELIC_API_KEY")
+	if !ok {
+		fmt.Println("Missing NEW_RELIC_API_KEY required for New Relic OpenTelemetry Exporter")
+		os.Exit(1)
+	}
+
+	exporter, err := newrelic.NewExporter(
+		"Simple OpenTelemetry Service",
+		apiKey,
+		telemetry.ConfigBasicErrorLogger(os.Stderr),
+		telemetry.ConfigBasicDebugLogger(os.Stderr),
+		telemetry.ConfigBasicAuditLogger(os.Stderr),
+	)
+	if err != nil {
+		fmt.Printf("Failed to instantiate New Relic OpenTelemetry exporter: %v\n", err)
+		os.Exit(1)
+	}
+
+	ctx := context.Background()
+	defer exporter.Shutdown(ctx)
    ```
 
    There are four things to notice above:
@@ -99,7 +101,7 @@ Full source of this modified sample application is available in examples/simple/
 You’re now set! If you’re not using go mod, you’ll need to download the exporter using the go get command:
 
 ```
-go get github.com/newrelic/opentelemetry-exporter-go@v0.14.0
+go get github.com/newrelic/opentelemetry-exporter-go
 ```
 
 ### **Running the sample application**
