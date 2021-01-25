@@ -19,16 +19,16 @@ To help you get started, this guide shows you how to set up a tiny Go applicatio
 ### **Get Started**
 Here’s what you need to get started exporting OpenTelemetry spans and metrics to New Relic:
 * Make sure you have signed up for a [New Relic account](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/create-your-new-relic-account).
-* Obtain an [Insights Event Insert API Key](https://docs.newrelic.com/docs/telemetry-data-platform/ingest-manage-data/ingest-apis/use-event-api-report-custom-events#) to send spans and metrics to New Relic.
+* Obtain an [Insights Event Insert API Key](https://docs.newrelic.com/docs/telemetry-data-platform/ingest-manage-data/ingest-apis/use-event-api-report-custom-events#) to send spans and metrics to New Relic. (In that guide, you only need to proceed as far as obtaining a new key, the rest of the steps are optional.)
 
 At this point, you have a couple of alternatives:
-* If you just want to see it working quickly, we have a tiny sample application set up for you [right here](examples/simple/main.go), already set up to export data to your New Relic account. Once you have it checked out, skip to [Running the sample application](#Running-the-sample-application) in this document.
+* If you just want to see it working quickly, we have a tiny sample application set up for you [right here](examples/simple), already set up to export data to your New Relic account. Once you have it checked out, skip to [Running the sample application](#Running-the-sample-application) in this document.
 * If you’re starting from scratch, review the Go OpenTelemetry [Getting Started Guide](https://opentelemetry.io/docs/go/getting-started/). This excellent guide will walk you through creating a tiny sample application that generates spans and metrics, and outputs text to your terminal. Then [modify your sample application](#Modify-the-OpenTelemetry-sample-application) to send data to New Relic using the instructions below.
 
 Lastly, [view your data in the New Relic One UI](#View-your-data-in-the-New-Relic-One-UI). Very satisfying!
 
 ### **Modify the OpenTelemetry sample application**
-Here’s what to do to switch out the text-based exporter defined in the Go OpenTelemetry SIG’s [Getting Started Guide](https://github.com/krnowak/opentelemetry.io/blob/1d498b5c2d578cd1932cb822ef482fb3ef861c21/content/en/docs/go/getting-started.md) with the New Relic OpenTelemetry Exporter for Go.
+Here’s what to do to switch out the text-based exporter defined in the Go OpenTelemetry SIG’s [Getting Started Guide](https://opentelemetry.io/docs/go/getting-started/) with the New Relic OpenTelemetry Exporter for Go.
 
 There are three steps to get it reporting to New Relic:
 
@@ -91,12 +91,18 @@ Full source of this modified sample application is available in examples/simple/
 
    * The configuration reads the [Insights Insert Key](https://docs.newrelic.com/docs/telemetry-data-platform/ingest-manage-data/ingest-apis/use-event-api-report-custom-events#) you obtained earlier from an environment variable called ```NEW_RELIC_API_KEY```. Keep this key safe from others, since it’s both identification and authentication in one handy token.
 
-   * This exporter uses ```Sample OpenTelemetry Service``` as its service name. This is the name you will see in the New Relic One UI.
+   * This exporter uses ```Simple OpenTelemetry Service``` as its service name. This is the name you will see in the New Relic One UI.
 
    * The configuration turns on all the logging it can for the purposes of this demo. To have a more silent exporter with lower overhead, remove those three lines.
 
    * Once we have the context (```ctx```), we defer the Shutdown function so the exporter has a chance to flush any accumulated data to the New Relic [Metrics and Traces](https://newrelic.com/platform/telemetry-data-101) endpoints.
 
+3. You'll need to add some imports to the top of the file.
+   ```
+   "os"
+   "fmt"
+   "github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
+   ```
 
 You’re now set! If you’re not using go mod, you’ll need to download the exporter using the go get command:
 
@@ -108,7 +114,7 @@ go get github.com/newrelic/opentelemetry-exporter-go
 To see it in action, just use go run with the [Insights Insert API Key](https://docs.newrelic.com/docs/telemetry-data-platform/ingest-manage-data/ingest-apis/use-event-api-report-custom-events#) set in the environment:
 
 ```
-NEW_RELIC_API_KEY=NRII-elvAeN_s-fv8fVai4yj4sfdLXkKMtqUu go run main.go
+NEW_RELIC_API_KEY=NRII-REPLACE_THIS_KEY run main.go
 ```
 
 Note that the key above isn’t a valid key -- replace it with your own.
@@ -119,14 +125,14 @@ Run that line a couple of times to send some data into New Relic.
 
 **To see span data**
 
-Go to the [New Relic One UI](https://one.newrelic.com) in your web browser, click the magnifying glass in the upper right corner and type your service name. New Relic searches through everything your user has permissions to see and will show you a link to the application. If you’re using a web framework, you’ll see a Summary overview containing response time, throughput, and errors. To see just the spans, click the “Distributed Tracing” header on the left.
+Go to the [New Relic One UI](https://one.newrelic.com) in your web browser, click the magnifying glass in the upper right corner and type your service name, which is ```Simple OpenTelemetry Service``` if you didn't change it from the example. New Relic searches through everything your user has permissions to see and will show you a link to the application. If you’re using a web framework, you’ll see a Summary overview containing response time, throughput, and errors. To see just the spans, click the “Distributed Tracing” header on the left.
 
 ![Image of Span Data in New Relic One](examples/simple/screenshot01.png)
 
 **To see metric data**
 
 Go to the [New Relic One UI](https://one.newrelic.com) in your web browser, click the "Query your data" link in the upper right corner, select your account, and then try this query:
-SELECT * FROM Metric where entity.name like 'Sample OpenTelemetry Service'
+SELECT * FROM Metric where entity.name like 'Simple OpenTelemetry Service'
 
 
 ![Image of Span Data in New Relic One](examples/simple/screenshot02.png)
