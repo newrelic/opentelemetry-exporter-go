@@ -6,11 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2021-01-26
+
+### Changed
+
+- Upgraded `go.opentelemetry.io/otel*` dependencies to v0.16.0. ([#48](https://github.com/newrelic/opentelemetry-exporter-go/pull/48))
+
+### Added
+
+- Added Getting Started guide with sample application. ([#44](https://github.com/newrelic/opentelemetry-exporter-go/pull/44), [#49](https://github.com/newrelic/opentelemetry-exporter-go/pull/49))
+
 ## [0.14.0] - 2020-12-04
 
 ### Changed
 
-- Upgrade `go.opentelemetry.io/otel*` to v0.14.0. (#40)
+- Upgrade `go.opentelemetry.io/otel*` to v0.14.0. ([#40](https://github.com/newrelic/opentelemetry-exporter-go/pull/40))
 
 ## [0.13.0] - 2020-10-28
 
@@ -32,7 +42,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 First release!
 
-[Unreleased]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.1.0...v0.13.0
 [0.1.0]: https://github.com/newrelic/opentelemetry-exporter-go/releases/tag/v0.1.0
