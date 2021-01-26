@@ -19,7 +19,7 @@ import (
 //
 // https://godoc.org/github.com/newrelic/newrelic-telemetry-sdk-go/telemetry#Span
 // https://godoc.org/go.opentelemetry.io/otel/sdk/export/trace#SpanData
-func Span(service string, span *trace.SpanData) telemetry.Span {
+func Span(service string, span *trace.SpanSnapshot) telemetry.Span {
 	// Default to exporter service name.
 	serviceName := service
 

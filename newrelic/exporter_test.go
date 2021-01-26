@@ -21,8 +21,8 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/number"
 	"go.opentelemetry.io/otel/sdk/export/trace"
-	"go.opentelemetry.io/otel/sdk/metric/controller/push"
-	integrator "go.opentelemetry.io/otel/sdk/metric/processor/basic"
+	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
+	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	selector "go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
@@ -38,10 +38,10 @@ func TestServiceNameMissing(t *testing.T) {
 }
 
 func TestNilExporter(t *testing.T) {
-	span := &trace.SpanData{}
+	span := &trace.SpanSnapshot{}
 	var e *Exporter
 
-	e.ExportSpans(context.Background(), []*trace.SpanData{span})
+	e.ExportSpans(context.Background(), []*trace.SpanSnapshot{span})
 }
 
 // MockTransport caches decompressed request bodies
@@ -235,7 +235,7 @@ func TestEndToEndMeter(t *testing.T) {
 	mockt := &MockTransport{
 		Data: make([]Data, 0, len(instruments)),
 	}
-	e, err := NewExporter(
+	exp, err := NewExporter(
 		serviceName,
 		"apiKey",
 		telemetry.ConfigHarvestPeriod(0),
@@ -252,13 +252,23 @@ func TestEndToEndMeter(t *testing.T) {
 		t.Fatalf("failed to instantiate exporter: %v", err)
 	}
 
-	aggSelector := selector.NewWithExactDistribution()
-	batcher := integrator.New(aggSelector, e)
-	pusher := push.New(batcher, e)
-	pusher.Start()
-
 	ctx := context.Background()
-	meter := pusher.MeterProvider().Meter("test-meter")
+	control := controller.New(
+		processor.New(
+			selector.NewWithInexpensiveDistribution(),
+			exp, // passed as an ExportKindSelector.
+		),
+		// Set collection period longer than this test will run for.
+		controller.WithCollectPeriod(10*time.Second),
+		controller.WithPushTimeout(time.Millisecond),
+		controller.WithPusher(exp),
+	)
+
+	if err := control.Start(ctx); err != nil {
+		t.Fatalf("starting controller: %v", err)
+	}
+
+	meter := control.MeterProvider().Meter("test-meter")
 
 	newInt64ObserverCallback := func(v int64) metric.Int64ObserverFunc {
 		return func(ctx context.Context, result metric.Int64ObserverResult) { result.Observe(v) }
@@ -328,13 +338,14 @@ func TestEndToEndMeter(t *testing.T) {
 		}
 	}
 
-	// Wait >2 cycles.
-	<-time.After(40 * time.Millisecond)
+	// Flush and stop the conroller.
+	if err := control.Stop(ctx); err != nil {
+		t.Fatalf("stopping controller: %v", err)
+	}
 
-	// Flush and close.
-	pusher.Stop()
-	if err := e.Shutdown(ctx); err != nil {
-		t.Fatalf("error shutting down: %v", err)
+	// Flush and stop the exporter.
+	if err := exp.Shutdown(ctx); err != nil {
+		t.Fatalf("shutting down exporter: %v", err)
 	}
 
 	gotMetrics := mockt.Metrics()

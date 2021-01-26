@@ -33,12 +33,12 @@ func TestTransformSpans(t *testing.T) {
 	now := time.Now()
 	testcases := []struct {
 		testname string
-		input    *exporttrace.SpanData
+		input    *exporttrace.SpanSnapshot
 		expect   telemetry.Span
 	}{
 		{
 			testname: "basic span",
-			input: &exporttrace.SpanData{
+			input: &exporttrace.SpanSnapshot{
 				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -62,7 +62,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with parent",
-			input: &exporttrace.SpanData{
+			input: &exporttrace.SpanSnapshot{
 				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -88,7 +88,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with error",
-			input: &exporttrace.SpanData{
+			input: &exporttrace.SpanSnapshot{
 				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -116,7 +116,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with attributes",
-			input: &exporttrace.SpanData{
+			input: &exporttrace.SpanSnapshot{
 				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -162,7 +162,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with attributes and error",
-			input: &exporttrace.SpanData{
+			input: &exporttrace.SpanSnapshot{
 				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -194,7 +194,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with service name in resource",
-			input: &exporttrace.SpanData{
+			input: &exporttrace.SpanSnapshot{
 				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -222,7 +222,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with a kind",
-			input: &exporttrace.SpanData{
+			input: &exporttrace.SpanSnapshot{
 				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -252,7 +252,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with service name in attributes",
-			input: &exporttrace.SpanData{
+			input: &exporttrace.SpanSnapshot{
 				SpanContext: trace.SpanContext{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
