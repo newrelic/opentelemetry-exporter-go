@@ -110,7 +110,8 @@ func main() {
 
 	func(ctx context.Context) {
 		var span trace.Span
-		ctx, span = tracer.Start(ctx, "operation")
+		ctx, span = tracer.Start(ctx, "operation",
+			trace.WithSpanKind(trace.SpanKindServer))
 		defer span.End()
 
 		span.AddEvent("Nice operation!", trace.WithAttributes(label.Int("bogons", 100)))
