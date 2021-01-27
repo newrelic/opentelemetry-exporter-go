@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Added SpanKind to Getting Started guide and simple sample application in order
+  to provide a better New Relic UI experience.
+
 ## [0.15.1] - 2021-01-26
 
 ### Changed
