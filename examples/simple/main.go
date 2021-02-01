@@ -62,6 +62,7 @@ func main() {
 			simple.NewWithExactDistribution(),
 			exporter,
 		),
+		controller.WithPusher(exporter),
 	)
 
 	err = pusher.Start(ctx)
