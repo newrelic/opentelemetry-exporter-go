@@ -135,9 +135,7 @@ func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption,
 // in the global OpenTelemetry telemetry pipeline. It is the callers
 // responsibility to stop the returned push Controller. 
 // ## Prerequisites
-// To use this, make sure you have the following:
-//     * A [New Relic account](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/create-your-new-relic-account)
-//     * A [New Relic Insights insert key](https://docs.newrelic.com/docs/apis/get-started/intro-apis/types-new-relic-api-keys#insights-insert-key) 
+// For details, check out the "Get Started" section of [New Relic Go OpenTelemetry exporter](https://github.com/newrelic/opentelemetry-exporter-go/blob/master/README.md#get-started).
 // ## Environment variables
 // This function uses the following environment variables to configure 
 // the exporter installed in the pipeline:
