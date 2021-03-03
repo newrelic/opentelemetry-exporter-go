@@ -13,6 +13,7 @@ import (
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/metric/global"
 	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -68,7 +69,7 @@ func ExampleNewExportPipeline() {
 	defer controller.Stop(context.Background())
 
 	otel.SetTracerProvider(traceProvider)
-	otel.SetMeterProvider(controller.MeterProvider())
+	global.SetMeterProvider(controller.MeterProvider())
 }
 
 func ExampleInstallNewPipeline() {
