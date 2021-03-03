@@ -19,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/propagation"
 	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
 	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
@@ -62,6 +63,7 @@ func main() {
 			simple.NewWithExactDistribution(),
 			exporter,
 		),
+		controller.WithPusher(exporter),
 	)
 
 	err = pusher.Start(ctx)
@@ -75,7 +77,7 @@ func main() {
 
 	// Set global options
 	otel.SetTracerProvider(tp)
-	otel.SetMeterProvider(pusher.MeterProvider())
+	global.SetMeterProvider(pusher.MeterProvider())
 	propagator := propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{})
 	otel.SetTextMapPropagator(propagator)
 
@@ -87,7 +89,7 @@ func main() {
 
 	commonLabels := []label.KeyValue{lemonsKey.Int(10), label.String("A", "1"), label.String("B", "2"), label.String("C", "3")}
 
-	meter := otel.Meter("ex.com/basic")
+	meter := global.Meter("ex.com/basic")
 
 	observerCallback := func(_ context.Context, result metric.Float64ObserverResult) {
 		result.Observe(1, commonLabels...)

@@ -11,6 +11,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added SpanKind to Getting Started guide and simple sample application in order
   to provide a better New Relic UI experience.
 
+## [0.17.0] - 2021-03-02
+
+### Changed
+
+- Upgrade `go.opentelemetry.io/otel*` to v0.17.0 and `github.com/newrelic/newrelic-telemetry-sdk-go` to v0.5.2.
+  ([#63](https://github.com/newrelic/opentelemetry-exporter-go/pull/63))
+
 ## [0.15.1] - 2021-01-26
 
 ### Changed

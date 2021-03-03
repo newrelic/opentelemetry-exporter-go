@@ -13,6 +13,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
 	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
@@ -158,7 +159,7 @@ func InstallNewPipeline(service string) (*controller.Controller, error) {
 	}
 
 	otel.SetTracerProvider(tp)
-	otel.SetMeterProvider(controller.MeterProvider())
+	global.SetMeterProvider(controller.MeterProvider())
 	return controller, nil
 }
 
