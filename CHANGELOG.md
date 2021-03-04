@@ -6,17 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Changed
-
-- Added SpanKind to Getting Started guide and simple sample application in order
-  to provide a better New Relic UI experience.
-
-## [0.17.0] - 2021-03-02
+## [0.17.0] - 2021-03-04
 
 ### Changed
 
 - Upgrade `go.opentelemetry.io/otel*` to v0.17.0 and `github.com/newrelic/newrelic-telemetry-sdk-go` to v0.5.2.
   ([#63](https://github.com/newrelic/opentelemetry-exporter-go/pull/63))
+- Added SpanKind to Getting Started guide and simple sample application in order
+  to provide a better New Relic UI experience.
+  ([#54](https://github.com/newrelic/opentelemetry-exporter-go/pull/54))
 
 ## [0.15.1] - 2021-01-26
 
@@ -54,7 +52,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 First release!
 
-[Unreleased]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.15.0...v0.17.0
 [0.15.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.1.0...v0.13.0
