@@ -32,9 +32,10 @@ Here’s what to do to switch out the text-based exporter defined in the Go Open
 
 There are three steps to get it reporting to New Relic:
 
-1. replace an import statement
+1. replace an import statement, and add some imports
 1. instantiate a ```newrelic``` exporter with some configuration options
-1. give the exporter time to report to New Relic.
+1. set the span.kind for a better UI experience in New Relic
+
 
 Full source of this modified sample application is available in examples/simple/main.go.
 
@@ -48,6 +49,13 @@ Full source of this modified sample application is available in examples/simple/
 
    ```go
    "github.com/newrelic/opentelemetry-exporter-go/newrelic"
+   ```
+
+   You'll also need to add some imports, if they're missing:
+   ```
+   "os"
+   "fmt"
+   "github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
    ```
 
 
@@ -97,11 +105,19 @@ Full source of this modified sample application is available in examples/simple/
 
    * Once we have the context (```ctx```), we defer the Shutdown function so the exporter has a chance to flush any accumulated data to the New Relic [Metrics and Traces](https://newrelic.com/platform/telemetry-data-101) endpoints.
 
-3. You'll need to add some imports to the top of the file.
+3. This example generates a parent span and a child span. For the parent, set
+   the kind of span to "server" to get the best experience in the New Relic UI.
+
+   Change:
+
    ```
-   "os"
-   "fmt"
-   "github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
+   		ctx, span = tracer.Start(ctx, "operation")
+   ```
+   ...to:
+
+   ```
+   		ctx, span = tracer.Start(ctx, "operation",
+   			trace.WithSpanKind(trace.SpanKindServer))
    ```
 
 You’re now set! If you’re not using go mod, you’ll need to download the exporter using the go get command:
@@ -198,7 +214,7 @@ To [all contributors](<LINK TO contributors>), we thank you!  Without your contr
 opentelemetry-exporter-go is licensed under the [Apache 2.0](http://apache.org/licenses/LICENSE-2.0.txt) License.
 
 
-## **imitations**
+## **Limitations**
 
 The New Relic Telemetry APIs are rate limited. Please reference the
 documentation for [New Relic Metrics
