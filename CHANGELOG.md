@@ -53,8 +53,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 First release!
 
 [Unreleased]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.17.0...HEAD
-[0.17.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.15.0...v0.17.0
-[0.15.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.14.0...v0.15.0
+[0.17.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.15.1...v0.17.0
+[0.15.1]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.14.0...v0.15.1
 [0.14.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.1.0...v0.13.0
 [0.1.0]: https://github.com/newrelic/opentelemetry-exporter-go/releases/tag/v0.1.0
