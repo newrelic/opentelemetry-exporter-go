@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/number"
 	"go.opentelemetry.io/otel/sdk/export/trace"
@@ -25,6 +25,7 @@ import (
 	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	selector "go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/semconv"
 )
 
 func TestServiceNameMissing(t *testing.T) {
@@ -165,7 +166,10 @@ func TestEndToEndTracer(t *testing.T) {
 		}
 		depth := numSpans - n
 		ctx, span := tracer.Start(ctx, fmt.Sprintf("Span %d", depth))
-		span.SetAttributes(label.Int("depth", depth))
+		span.SetAttributes(
+			attribute.Int("depth", depth),
+			semconv.ServiceNameKey.String(serviceName),
+		)
 		descend(ctx, n-1)
 		span.End()
 	}
