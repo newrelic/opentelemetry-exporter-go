@@ -16,8 +16,8 @@ import (
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/propagation"
@@ -82,12 +82,12 @@ func main() {
 	otel.SetTextMapPropagator(propagator)
 
 	// Sample metric instruments
-	fooKey := label.Key("ex.com/foo")
-	barKey := label.Key("ex.com/bar")
-	lemonsKey := label.Key("ex.com/lemons")
-	anotherKey := label.Key("ex.com/another")
+	fooKey := attribute.Key("ex.com/foo")
+	barKey := attribute.Key("ex.com/bar")
+	lemonsKey := attribute.Key("ex.com/lemons")
+	anotherKey := attribute.Key("ex.com/another")
 
-	commonLabels := []label.KeyValue{lemonsKey.Int(10), label.String("A", "1"), label.String("B", "2"), label.String("C", "3")}
+	commonLabels := []attribute.KeyValue{lemonsKey.Int(10), attribute.String("A", "1"), attribute.String("B", "2"), attribute.String("C", "3")}
 
 	meter := global.Meter("ex.com/basic")
 
@@ -116,7 +116,7 @@ func main() {
 			trace.WithSpanKind(trace.SpanKindServer))
 		defer span.End()
 
-		span.AddEvent("Nice operation!", trace.WithAttributes(label.Int("bogons", 100)))
+		span.AddEvent("Nice operation!", trace.WithAttributes(attribute.Int("bogons", 100)))
 		span.SetAttributes(anotherKey.String("yes"))
 
 		meter.RecordBatch(
