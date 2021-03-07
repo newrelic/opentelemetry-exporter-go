@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/number"
 	"go.opentelemetry.io/otel/sdk/export/trace"
@@ -165,7 +165,7 @@ func TestEndToEndTracer(t *testing.T) {
 		}
 		depth := numSpans - n
 		ctx, span := tracer.Start(ctx, fmt.Sprintf("Span %d", depth))
-		span.SetAttributes(label.Int("depth", depth))
+		span.SetAttributes(attribute.Int("depth", depth))
 		descend(ctx, n-1)
 		span.End()
 	}

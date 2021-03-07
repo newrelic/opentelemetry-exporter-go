@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/export/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -102,7 +102,7 @@ func minMaxSumCount(desc *metric.Descriptor, attrs map[string]interface{}, a agg
 	}, nil
 }
 
-func attributes(service string, res *resource.Resource, desc *metric.Descriptor, labels *label.Set) map[string]interface{} {
+func attributes(service string, res *resource.Resource, desc *metric.Descriptor, labels *attribute.Set) map[string]interface{} {
 	// By default include New Relic attributes and all labels
 	n := 2 + labels.Len() + res.Len()
 	if desc != nil {

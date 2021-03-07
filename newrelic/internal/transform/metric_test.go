@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/export/metric"
 	"go.opentelemetry.io/otel/sdk/metric/aggregator/minmaxsumcount"
@@ -41,14 +41,14 @@ func TestServiceNameAttributes(t *testing.T) {
 		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
 	}
 
-	r := resource.NewWithAttributes(label.String("service.name", want))
+	r := resource.NewWithAttributes(attribute.String("service.name", want))
 	attrs = attributes(wrong, r, nil, nil)
 	if got, ok := attrs[serviceNameAttrKey]; !ok || got != want {
 		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
 	}
 
-	r = resource.NewWithAttributes(label.String("service.name", wrong))
-	l := label.NewSet(label.String("service.name", want))
+	r = resource.NewWithAttributes(attribute.String("service.name", wrong))
+	l := attribute.NewSet(attribute.String("service.name", want))
 	attrs = attributes(wrong, r, nil, &l)
 	if got, ok := attrs[serviceNameAttrKey]; !ok || got != want {
 		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
@@ -59,12 +59,12 @@ func TestAttributes(t *testing.T) {
 	for i, test := range []struct {
 		res    *resource.Resource
 		opts   []metric.InstrumentOption
-		labels []label.KeyValue
+		labels []attribute.KeyValue
 		want   map[string]interface{}
 	}{
 		{}, // test defaults
 		{
-			res:    resource.NewWithAttributes(label.String("A", "a")),
+			res:    resource.NewWithAttributes(attribute.String("A", "a")),
 			opts:   nil,
 			labels: nil,
 			want: map[string]interface{}{
@@ -72,7 +72,7 @@ func TestAttributes(t *testing.T) {
 			},
 		},
 		{
-			res:    resource.NewWithAttributes(label.String("A", "a"), label.Int64("1", 1)),
+			res:    resource.NewWithAttributes(attribute.String("A", "a"), attribute.Int64("1", 1)),
 			opts:   nil,
 			labels: nil,
 			want: map[string]interface{}{
@@ -99,7 +99,7 @@ func TestAttributes(t *testing.T) {
 		{
 			res:    nil,
 			opts:   nil,
-			labels: []label.KeyValue{label.String("A", "a")},
+			labels: []attribute.KeyValue{attribute.String("A", "a")},
 			want: map[string]interface{}{
 				"A": "a",
 			},
@@ -107,19 +107,19 @@ func TestAttributes(t *testing.T) {
 		{
 			res:    nil,
 			opts:   nil,
-			labels: []label.KeyValue{label.String("A", "a"), label.Int64("1", 1)},
+			labels: []attribute.KeyValue{attribute.String("A", "a"), attribute.Int64("1", 1)},
 			want: map[string]interface{}{
 				"A": "a",
 				"1": int64(1),
 			},
 		},
 		{
-			res: resource.NewWithAttributes(label.String("K1", "V1"), label.String("K2", "V2")),
+			res: resource.NewWithAttributes(attribute.String("K1", "V1"), attribute.String("K2", "V2")),
 			opts: []metric.InstrumentOption{
 				metric.WithUnit(unit.Milliseconds),
 				metric.WithDescription("d3"),
 			},
-			labels: []label.KeyValue{label.String("K2", "V3")},
+			labels: []attribute.KeyValue{attribute.String("K2", "V3")},
 			want: map[string]interface{}{
 				"K1":          "V1",
 				"K2":          "V3",
@@ -130,7 +130,7 @@ func TestAttributes(t *testing.T) {
 	} {
 		name := fmt.Sprintf("descriptor test %d", i)
 		desc := metric.NewDescriptor(name, metric.CounterInstrumentKind, number.Int64Kind, test.opts...)
-		l := label.NewSet(test.labels...)
+		l := attribute.NewSet(test.labels...)
 		expected := make(map[string]interface{}, len(defaultAttrs)+len(test.want))
 		for k, v := range defaultAttrs {
 			expected[k] = v
@@ -149,7 +149,7 @@ var numKinds = []number.Kind{number.Int64Kind, number.Float64Kind}
 
 func TestMinMaxSumCountRecord(t *testing.T) {
 	name := "test-mmsc"
-	l := label.NewSet()
+	l := attribute.NewSet()
 	for _, iKind := range []metric.InstrumentKind{metric.ValueRecorderInstrumentKind, metric.ValueObserverInstrumentKind} {
 		for _, nKind := range numKinds {
 			desc := metric.NewDescriptor(name, iKind, nKind)
@@ -209,7 +209,7 @@ func TestMinMaxSumCountRecord(t *testing.T) {
 
 func TestSumRecord(t *testing.T) {
 	name := "test-sum"
-	l := label.NewSet()
+	l := attribute.NewSet()
 	for _, nKind := range numKinds {
 		desc := metric.NewDescriptor(name, metric.CounterInstrumentKind, nKind)
 		s := sumAgg.New(1)[0]
@@ -255,7 +255,7 @@ func (a fakeAgg) Merge(metricsdk.Aggregator, *metric.Descriptor) error          
 func TestErrUnimplementedAgg(t *testing.T) {
 	fa := fakeAgg{}
 	desc := metric.NewDescriptor("", metric.CounterInstrumentKind, number.Int64Kind)
-	l := label.NewSet()
+	l := attribute.NewSet()
 	_, err := Record("", metricsdk.NewRecord(&desc, &l, nil, fa, time.Now(), time.Now()))
 	if !errors.Is(err, ErrUnimplementedAgg) {
 		t.Errorf("unexpected error: %v", err)
