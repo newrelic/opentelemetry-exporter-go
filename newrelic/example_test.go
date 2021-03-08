@@ -9,8 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/akulnurislam/opentelemetry-exporter-go/newrelic"
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/global"
