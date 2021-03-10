@@ -155,7 +155,6 @@ func TestEndToEndTracer(t *testing.T) {
 	}
 
 	r := resource.NewWithAttributes(semconv.ServiceNameKey.String(serviceName))
-
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(e, sdktrace.WithBatchTimeout(15), sdktrace.WithMaxExportBatchSize(10)),
 		sdktrace.WithResource(r),

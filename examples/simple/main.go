@@ -24,7 +24,9 @@ import (
 	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
 	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
+	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/semconv"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -37,8 +39,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	serviceName := "Simple OpenTelemetry Service"
 	exporter, err := newrelic.NewExporter(
-		"Simple OpenTelemetry Service",
+		serviceName,
 		apiKey,
 		telemetry.ConfigBasicErrorLogger(os.Stderr),
 		telemetry.ConfigBasicDebugLogger(os.Stderr),
@@ -52,9 +55,12 @@ func main() {
 	ctx := context.Background()
 	defer exporter.Shutdown(ctx)
 
+	// Minimally default resource with a service name
+	r := resource.NewWithAttributes(semconv.ServiceNameKey.String(serviceName))
+
 	// Create a tracer provider
 	bsp := sdktrace.NewBatchSpanProcessor(exporter)
-	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(bsp))
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(bsp), sdktrace.WithResource(r))
 	defer func() { _ = tp.Shutdown(ctx) }()
 
 	// Create a meter provider
