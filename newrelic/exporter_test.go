@@ -24,6 +24,7 @@ import (
 	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
 	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	selector "go.opentelemetry.io/otel/sdk/metric/selector/simple"
+	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv"
 )
@@ -153,8 +154,11 @@ func TestEndToEndTracer(t *testing.T) {
 		t.Fatalf("failed to instantiate exporter: %v", err)
 	}
 
+	r := resource.NewWithAttributes(semconv.ServiceNameKey.String(serviceName))
+
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(e, sdktrace.WithBatchTimeout(15), sdktrace.WithMaxExportBatchSize(10)),
+		sdktrace.WithResource(r),
 	)
 
 	tracer := tracerProvider.Tracer("test-tracer")
@@ -166,10 +170,7 @@ func TestEndToEndTracer(t *testing.T) {
 		}
 		depth := numSpans - n
 		ctx, span := tracer.Start(ctx, fmt.Sprintf("Span %d", depth))
-		span.SetAttributes(
-			attribute.Int("depth", depth),
-			semconv.ServiceNameKey.String(serviceName),
-		)
+		span.SetAttributes(attribute.Int("depth", depth))
 		descend(ctx, n-1)
 		span.End()
 	}
