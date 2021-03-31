@@ -49,15 +49,13 @@ func ExampleNewExportPipeline() {
 	traceProvider, controller, err := newrelic.NewExportPipeline(
 		"My Service",
 		[]trace.TracerProviderOption{
-			trace.WithConfig(trace.Config{
-				// Conservative sampler.
-				DefaultSampler: trace.ParentBased(trace.NeverSample()),
-				// Reduce span events.
-				SpanLimits: trace.SpanLimits{
-					EventCountLimit: 10,
-				},
-				Resource: r,
+			// Conservative sampler.
+			trace.WithSampler(trace.NeverSample()),
+			// Reduce span events.
+			trace.WithSpanLimits(trace.SpanLimits{
+				EventCountLimit: 10,
 			}),
+			trace.WithResource(r),
 		},
 		[]controller.Option{
 			// Increase push frequency.

@@ -69,7 +69,7 @@ func main() {
 			simple.NewWithExactDistribution(),
 			exporter,
 		),
-		controller.WithPusher(exporter),
+		controller.WithExporter(exporter),
 	)
 
 	err = pusher.Start(ctx)
