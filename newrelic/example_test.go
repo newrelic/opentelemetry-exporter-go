@@ -12,7 +12,7 @@ import (
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/global"
 	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -40,7 +40,7 @@ func ExampleNewExporter() {
 func ExampleNewExportPipeline() {
 	// Include environment in resource.
 	r := resource.NewWithAttributes(
-		label.String("environment", "production"),
+		attribute.String("environment", "production"),
 		semconv.ServiceNameKey.String("My Service"),
 	)
 
@@ -53,8 +53,10 @@ func ExampleNewExportPipeline() {
 				// Conservative sampler.
 				DefaultSampler: trace.ParentBased(trace.NeverSample()),
 				// Reduce span events.
-				MaxEventsPerSpan: 10,
-				Resource:         r,
+				SpanLimits: trace.SpanLimits{
+					EventCountLimit: 10,
+				},
+				Resource: r,
 			}),
 		},
 		[]controller.Option{

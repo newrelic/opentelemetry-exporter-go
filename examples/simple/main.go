@@ -16,15 +16,17 @@ import (
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/propagation"
 	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
 	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
+	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/semconv"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -37,8 +39,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	serviceName := "Simple OpenTelemetry Service"
 	exporter, err := newrelic.NewExporter(
-		"Simple OpenTelemetry Service",
+		serviceName,
 		apiKey,
 		telemetry.ConfigBasicErrorLogger(os.Stderr),
 		telemetry.ConfigBasicDebugLogger(os.Stderr),
@@ -52,9 +55,12 @@ func main() {
 	ctx := context.Background()
 	defer exporter.Shutdown(ctx)
 
+	// Minimally default resource with a service name
+	r := resource.NewWithAttributes(semconv.ServiceNameKey.String(serviceName))
+
 	// Create a tracer provider
 	bsp := sdktrace.NewBatchSpanProcessor(exporter)
-	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(bsp))
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(bsp), sdktrace.WithResource(r))
 	defer func() { _ = tp.Shutdown(ctx) }()
 
 	// Create a meter provider
@@ -82,12 +88,12 @@ func main() {
 	otel.SetTextMapPropagator(propagator)
 
 	// Sample metric instruments
-	fooKey := label.Key("ex.com/foo")
-	barKey := label.Key("ex.com/bar")
-	lemonsKey := label.Key("ex.com/lemons")
-	anotherKey := label.Key("ex.com/another")
+	fooKey := attribute.Key("ex.com/foo")
+	barKey := attribute.Key("ex.com/bar")
+	lemonsKey := attribute.Key("ex.com/lemons")
+	anotherKey := attribute.Key("ex.com/another")
 
-	commonLabels := []label.KeyValue{lemonsKey.Int(10), label.String("A", "1"), label.String("B", "2"), label.String("C", "3")}
+	commonLabels := []attribute.KeyValue{lemonsKey.Int(10), attribute.String("A", "1"), attribute.String("B", "2"), attribute.String("C", "3")}
 
 	meter := global.Meter("ex.com/basic")
 
@@ -116,7 +122,7 @@ func main() {
 			trace.WithSpanKind(trace.SpanKindServer))
 		defer span.End()
 
-		span.AddEvent("Nice operation!", trace.WithAttributes(label.Int("bogons", 100)))
+		span.AddEvent("Nice operation!", trace.WithAttributes(attribute.Int("bogons", 100)))
 		span.SetAttributes(anotherKey.String("yes"))
 
 		meter.RecordBatch(
