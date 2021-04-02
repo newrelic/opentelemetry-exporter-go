@@ -265,7 +265,7 @@ func TestEndToEndMeter(t *testing.T) {
 		// Set collection period longer than this test will run for.
 		controller.WithCollectPeriod(10*time.Second),
 		controller.WithPushTimeout(time.Millisecond),
-		controller.WithPusher(exp),
+		controller.WithExporter(exp),
 	)
 
 	if err := control.Start(ctx); err != nil {

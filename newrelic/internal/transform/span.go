@@ -74,8 +74,8 @@ func Span(service string, span *trace.SpanSnapshot) telemetry.Span {
 	}
 
 	return telemetry.Span{
-		ID:          span.SpanContext.SpanID.String(),
-		TraceID:     span.SpanContext.TraceID.String(),
+		ID:          span.SpanContext.SpanID().String(),
+		TraceID:     span.SpanContext.TraceID().String(),
 		Timestamp:   span.StartTime,
 		Name:        span.Name,
 		ParentID:    parentSpanID,
