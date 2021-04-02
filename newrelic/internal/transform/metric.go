@@ -5,12 +5,14 @@ package transform
 
 import (
 	"errors"
+	"fmt"
 
+	"go.opentelemetry.io/otel/metric/number"
 	"go.opentelemetry.io/otel/sdk/export/metric/aggregation"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	"go.opentelemetry.io/otel/api/metric"
-	"go.opentelemetry.io/otel/label"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/export/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 )
@@ -25,14 +27,30 @@ var ErrUnimplementedAgg = errors.New("unimplemented aggregation")
 func Record(service string, record metricsdk.Record) (telemetry.Metric, error) {
 	desc := record.Descriptor()
 	attrs := attributes(service, record.Resource(), desc, record.Labels())
-	record.Aggregation()
 	switch a := record.Aggregation().(type) {
 	case aggregation.MinMaxSumCount:
 		return minMaxSumCount(desc, attrs, a)
 	case aggregation.Sum:
 		return sum(desc, attrs, a)
+	case aggregation.LastValue:
+		return lastValue(desc, attrs, a)
 	}
-	return nil, ErrUnimplementedAgg
+	return nil, fmt.Errorf("%w: %T", ErrUnimplementedAgg, record.Aggregation())
+}
+
+// lastValue transforms a LastValue Aggregation into a Gauge Metric.
+func lastValue(desc *metric.Descriptor, attrs map[string]interface{}, a aggregation.LastValue) (telemetry.Metric, error) {
+	v, t, err := a.LastValue()
+	if err != nil {
+		return nil, err
+	}
+
+	return telemetry.Gauge{
+		Name:       desc.Name(),
+		Attributes: attrs,
+		Value:      v.CoerceToFloat64(desc.NumberKind()),
+		Timestamp:  t,
+	}, nil
 }
 
 // sum transforms a Sum Aggregation into a Count Metric.
@@ -51,7 +69,7 @@ func sum(desc *metric.Descriptor, attrs map[string]interface{}, a aggregation.Su
 
 // minMaxSumCountValue returns the values of the MinMaxSumCount Aggregation
 // as discret values or any error returned from parsing any of the values.
-func minMaxSumCountValues(a aggregation.MinMaxSumCount) (min, max, sum metric.Number, count int64, err error) {
+func minMaxSumCountValues(a aggregation.MinMaxSumCount) (min, max, sum number.Number, count uint64, err error) {
 	if min, err = a.Min(); err != nil {
 		return
 	}
@@ -84,7 +102,7 @@ func minMaxSumCount(desc *metric.Descriptor, attrs map[string]interface{}, a agg
 	}, nil
 }
 
-func attributes(service string, res *resource.Resource, desc *metric.Descriptor, labels *label.Set) map[string]interface{} {
+func attributes(service string, res *resource.Resource, desc *metric.Descriptor, labels *attribute.Set) map[string]interface{} {
 	// By default include New Relic attributes and all labels
 	n := 2 + labels.Len() + res.Len()
 	if desc != nil {

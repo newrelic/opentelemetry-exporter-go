@@ -4,26 +4,21 @@
 package newrelic_test
 
 import (
+	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic"
-	"go.opentelemetry.io/otel/api/global"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric/global"
+	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/semconv"
 )
-
-func Example() {
-	exporter, err := newrelic.NewExporter("My Service", os.Getenv("NEW_RELIC_API_KEY"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	tp, err := trace.NewProvider(trace.WithSyncer(exporter))
-	if err != nil {
-		log.Fatal(err)
-	}
-	global.SetTraceProvider(tp)
-}
 
 func ExampleNewExporter() {
 	// To enable Infinite Tracing on the New Relic Edge, use the
@@ -37,9 +32,54 @@ func ExampleNewExporter() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tp, err := trace.NewProvider(trace.WithSyncer(exporter))
+	otel.SetTracerProvider(
+		trace.NewTracerProvider(trace.WithSyncer(exporter)),
+	)
+}
+
+func ExampleNewExportPipeline() {
+	// Include environment in resource.
+	r := resource.NewWithAttributes(
+		attribute.String("environment", "production"),
+		semconv.ServiceNameKey.String("My Service"),
+	)
+
+	// Assumes the NEW_RELIC_API_KEY environment variable contains your New
+	// Relic Event API key. This will error if it does not.
+	traceProvider, controller, err := newrelic.NewExportPipeline(
+		"My Service",
+		[]trace.TracerProviderOption{
+			trace.WithConfig(trace.Config{
+				// Conservative sampler.
+				DefaultSampler: trace.ParentBased(trace.NeverSample()),
+				// Reduce span events.
+				SpanLimits: trace.SpanLimits{
+					EventCountLimit: 10,
+				},
+				Resource: r,
+			}),
+		},
+		[]controller.Option{
+			// Increase push frequency.
+			controller.WithCollectPeriod(time.Second),
+			controller.WithResource(r),
+		},
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
-	global.SetTraceProvider(tp)
+	defer controller.Stop(context.Background())
+
+	otel.SetTracerProvider(traceProvider)
+	global.SetMeterProvider(controller.MeterProvider())
+}
+
+func ExampleInstallNewPipeline() {
+	// Assumes the NEW_RELIC_API_KEY environment variable contains your New
+	// Relic Event API key. This will error if it does not.
+	controller, err := newrelic.InstallNewPipeline("My Service")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer controller.Stop(context.Background())
 }

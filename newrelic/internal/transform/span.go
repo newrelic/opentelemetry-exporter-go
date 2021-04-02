@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
-	apitrace "go.opentelemetry.io/otel/api/trace"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/sdk/export/trace"
 	"go.opentelemetry.io/otel/semconv"
-	"google.golang.org/grpc/codes"
+	apitrace "go.opentelemetry.io/otel/trace"
 )
 
 // Span transforms an OpenTelemetry SpanData into a New Relic Span for a
@@ -19,7 +19,7 @@ import (
 //
 // https://godoc.org/github.com/newrelic/newrelic-telemetry-sdk-go/telemetry#Span
 // https://godoc.org/go.opentelemetry.io/otel/sdk/export/trace#SpanData
-func Span(service string, span *trace.SpanData) telemetry.Span {
+func Span(service string, span *trace.SpanSnapshot) telemetry.Span {
 	// Default to exporter service name.
 	serviceName := service
 
@@ -31,8 +31,8 @@ func Span(service string, span *trace.SpanData) telemetry.Span {
 		numAttrs++
 	}
 
-	// Consider everything other than an OK as an error.
-	isError := span.StatusCode != codes.OK
+	// Status of Ok and Unset are not considered errors.
+	isError := span.StatusCode == codes.Error
 	if isError {
 		numAttrs += 2
 	}
@@ -56,7 +56,7 @@ func Span(service string, span *trace.SpanData) telemetry.Span {
 	}
 
 	if span.SpanKind != apitrace.SpanKindUnspecified {
-		attrs["span.kind"] = strings.ToUpper(span.SpanKind.String())
+		attrs["span.kind"] = strings.ToLower(span.SpanKind.String())
 	}
 
 	// New Relic registered attributes to identify where this data came from.
