@@ -134,24 +134,23 @@ func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption,
 
 // InstallNewPipeline installs a New Relic exporter with default settings
 // in the global OpenTelemetry telemetry pipeline. It is the callers
-// responsibility to stop the returned push Controller. This function uses the
-// following environment variables to configure the exporter installed in the
-// pipeline:
-//
-//    * `NEW_RELIC_API_KEY`: New Relic Event API key.
+// responsibility to stop the returned push Controller. 
+// ## Prerequisites
+// For details, check out the "Get Started" section of [New Relic Go OpenTelemetry exporter](https://github.com/newrelic/opentelemetry-exporter-go/blob/master/README.md#get-started).
+// ## Environment variables
+// This function uses the following environment variables to configure 
+// the exporter installed in the pipeline:
+//    * `NEW_RELIC_API_KEY`: New Relic Insights insert key.
 //    * `NEW_RELIC_METRIC_URL`: Override URL to New Relic metric endpoint.
 //    * `NEW_RELIC_TRACE_URL`: Override URL to New Relic trace endpoint.
-//
-// More information about the New Relic Event API key can be found
-// here: https://docs.newrelic.com/docs/apis/get-started/intro-apis/types-new-relic-api-keys#event-insert-key.
-//
 // The exporter will send telemetry to the default New Relic metric and trace
-// API endpoints in the United States. These can be overwritten with the above
-// environment variables. These are useful if you wish to send to our EU
-// endpoints:
-//
-//    * EU metric API endpoint: metric-api.eu.newrelic.com/metric/v1
-//    * EU trace API endpoint: trace-api.eu.newrelic.com/trace/v1
+// API endpoints in the United States:
+// * Traces: https://trace-api.newrelic.com/trace/v1
+// * Metrics: https://metric-api.newrelic.com/metric/v1
+// You can overwrite these with the above environment variables
+// to send data to our EU endpoints or to set up Infinite Tracing.
+// For information about changing endpoints, see [OpenTelemetry: Advanced configuration](https://docs.newrelic.com/docs/integrations/open-source-telemetry-integrations/opentelemetry/opentelemetry-advanced-configuration#h2-change-endpoints).
+
 func InstallNewPipeline(service string) (*controller.Controller, error) {
 	tp, controller, err := NewExportPipeline(service, nil, nil)
 	if err != nil {
