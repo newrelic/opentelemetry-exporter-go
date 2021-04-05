@@ -177,8 +177,8 @@ If the issue has been confirmed as a bug or is a feature request, file a GitHub 
 
 **Support Channels**
 
-* [New Relic Documentation](LINK to specific docs page): Comprehensive guidance for using our platform
-* [New Relic Community](LINK to specific community page): The best place to engage in troubleshooting questions
+* [New Relic Documentation](https://docs.newrelic.com/docs/integrations/open-source-telemetry-integrations/opentelemetry/introduction-opentelemetry-new-relic/): Comprehensive guidance for using our platform
+* [New Relic Community](https://discuss.newrelic.com/tag/goagent): The best place to engage in troubleshooting questions
 * [New Relic Developer](https://developer.newrelic.com/): Resources for building a custom observability applications
 * [New Relic University](https://learn.newrelic.com/): A range of online training for New Relic users of every level
 
