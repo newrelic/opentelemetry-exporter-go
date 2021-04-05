@@ -5,6 +5,16 @@
 // guide, with the text-based exporter replaced with the New Relic OpenTelemetry
 // Exporter.
 
+// This example allows customers to override the Metrics and Spans endpoint URLs
+// with these environment variables:
+//   NEW_RELIC_METRIC_URL
+//   NEW_RELIC_TRACE_URL
+
+// For example, as of this writing, if using this in the EU, set these two
+// environment variables to send data to the New Relic EU datacenter:
+//   NEW_RELIC_METRIC_URL=https://metric-api.eu.newrelic.com/trace/v1
+//   NEW_RELIC_TRACE_URL=https://trace-api.eu.newrelic.com/trace/v1
+
 package main
 
 import (
@@ -46,6 +56,11 @@ func main() {
 		telemetry.ConfigBasicErrorLogger(os.Stderr),
 		telemetry.ConfigBasicDebugLogger(os.Stderr),
 		telemetry.ConfigBasicAuditLogger(os.Stderr),
+		func(cfg *telemetry.Config) {
+			cfg.MetricsURLOverride = os.Getenv("NEW_RELIC_METRIC_URL")
+			cfg.SpansURLOverride = os.Getenv("NEW_RELIC_TRACE_URL")
+			cfg.EventsURLOverride = os.Getenv("NEW_RELIC_EVENT_URL")
+		},
 	)
 	if err != nil {
 		fmt.Printf("Failed to instantiate New Relic OpenTelemetry exporter: %v\n", err)
