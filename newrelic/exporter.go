@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	version          = "0.1.0"
+	version          = "0.18.0"
 	userAgentProduct = "NewRelic-Go-OpenTelemetry"
 )
 
@@ -68,7 +68,7 @@ func NewExporter(service, apiKey string, options ...func(*telemetry.Config)) (*E
 }
 
 // NewExportPipeline creates a new OpenTelemetry telemetry pipeline using a
-// New Relic Exporter configured with default setting. It is the callers
+// New Relic Exporter configured with default setting. It is the caller's
 // responsibility to stop the returned OTel Controller. This function uses the
 // following environment variables to configure the exporter installed in the
 // pipeline:
@@ -133,12 +133,12 @@ func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption,
 }
 
 // InstallNewPipeline installs a New Relic exporter with default settings
-// in the global OpenTelemetry telemetry pipeline. It is the callers
-// responsibility to stop the returned push Controller. 
+// in the global OpenTelemetry telemetry pipeline. It is the caller's
+// responsibility to stop the returned push Controller.
 // ## Prerequisites
 // For details, check out the "Get Started" section of [New Relic Go OpenTelemetry exporter](https://github.com/newrelic/opentelemetry-exporter-go/blob/master/README.md#get-started).
 // ## Environment variables
-// This function uses the following environment variables to configure 
+// This function uses the following environment variables to configure
 // the exporter installed in the pipeline:
 //    * `NEW_RELIC_API_KEY`: New Relic Insights insert key.
 //    * `NEW_RELIC_METRIC_URL`: Override URL to New Relic metric endpoint.
