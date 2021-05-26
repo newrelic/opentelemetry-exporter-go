@@ -25,7 +25,6 @@ import (
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"github.com/newrelic/opentelemetry-exporter-go/newrelic/internal/transform"
 	exportmetric "go.opentelemetry.io/otel/sdk/export/metric"
-	exporttrace "go.opentelemetry.io/otel/sdk/export/trace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -163,12 +162,12 @@ func InstallNewPipeline(service string) (*controller.Controller, error) {
 }
 
 var (
-	_ exporttrace.SpanExporter = (*Exporter)(nil)
-	_ exportmetric.Exporter    = (*Exporter)(nil)
+	_ sdktrace.SpanExporter = (*Exporter)(nil)
+	_ exportmetric.Exporter = (*Exporter)(nil)
 )
 
 // ExportSpans exports span data to New Relic.
-func (e *Exporter) ExportSpans(ctx context.Context, spans []*exporttrace.SpanSnapshot) error {
+func (e *Exporter) ExportSpans(ctx context.Context, spans []*sdktrace.SpanSnapshot) error {
 	if nil == e {
 		return nil
 	}

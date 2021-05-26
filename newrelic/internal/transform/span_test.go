@@ -11,8 +11,8 @@ import (
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	exporttrace "go.opentelemetry.io/otel/sdk/export/trace"
 	"go.opentelemetry.io/otel/sdk/resource"
+	exporttrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -67,16 +67,19 @@ func TestTransformSpans(t *testing.T) {
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
 				}),
-				ParentSpanID: sampleParentID,
-				StartTime:    now,
-				EndTime:      now.Add(2 * time.Second),
-				Name:         "mySpan",
+				Parent: trace.NewSpanContext(trace.SpanContextConfig{
+					TraceID: sampleTraceID,
+					SpanID:  sampleParentID,
+				}),
+				StartTime: now,
+				EndTime:   now.Add(2 * time.Second),
+				Name:      "mySpan",
 			},
 			expect: telemetry.Span{
 				Name:        "mySpan",
 				ID:          sampleSpanIDString,
 				TraceID:     sampleTraceIDString,
-				ParentID:    sampleParentIDString,
+				ParentID:    sampleParentID.String(),
 				Timestamp:   now,
 				Duration:    2 * time.Second,
 				ServiceName: service,
