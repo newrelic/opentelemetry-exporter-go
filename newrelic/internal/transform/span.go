@@ -4,12 +4,11 @@
 package transform
 
 import (
-	"encoding/hex"
 	"strings"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/sdk/export/trace"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv"
 	apitrace "go.opentelemetry.io/otel/trace"
 )
@@ -69,8 +68,8 @@ func Span(service string, span *trace.SpanSnapshot) telemetry.Span {
 	}
 
 	parentSpanID := ""
-	if span.ParentSpanID.IsValid() {
-		parentSpanID = hex.EncodeToString(span.ParentSpanID[:])
+	if span.Parent.SpanID().IsValid() {
+		parentSpanID = span.Parent.SpanID().String()
 	}
 
 	return telemetry.Span{
