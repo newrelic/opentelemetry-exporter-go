@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.20.0] - 2021-05-26
 
 ### Changed
+- Added archival notice to README. In the near future, this exporter will no longer be maintained in favor of using [New Relic's native OTLP ingest](https://docs.newrelic.com/whats-new/2021/04/native-support-opentelemetry/). It is suggested to use the [OpenTelemetry Go OTLP exporter](https://github.com/open-telemetry/opentelemetry-go/tree/main/exporters/otlp).
 - Upgraded `go.opentelemetry.io/otel*` dependencies to v0.20.0. ([#92](https://github.com/newrelic/opentelemetry-exporter-go/pull/92))
 
 ## [0.18.0] - 2021-04-06
