@@ -67,7 +67,8 @@ New Relic's EU datacenter.
 
 First release!
 
-[Unreleased]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.20.0...HEAD
+[0.20.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.18.0...v0.20.0
 [0.18.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.15.1...v0.17.0
 [0.15.1]: https://github.com/newrelic/opentelemetry-exporter-go/compare/v0.14.0...v0.15.1
