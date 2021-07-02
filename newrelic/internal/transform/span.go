@@ -9,7 +9,7 @@ import (
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	apitrace "go.opentelemetry.io/otel/trace"
 )
 
@@ -18,27 +18,27 @@ import (
 //
 // https://godoc.org/github.com/newrelic/newrelic-telemetry-sdk-go/telemetry#Span
 // https://godoc.org/go.opentelemetry.io/otel/sdk/export/trace#SpanData
-func Span(service string, span *trace.SpanSnapshot) telemetry.Span {
+func Span(service string, span trace.ReadOnlySpan) telemetry.Span {
 	// Default to exporter service name.
 	serviceName := service
 
 	// Account for the instrumentation provider and collector name.
-	numAttrs := len(span.Attributes) + span.Resource.Len() + 2
+	numAttrs := len(span.Attributes()) + span.Resource().Len() + 2
 
 	// If kind has been set, make room for it.
-	if span.SpanKind != apitrace.SpanKindUnspecified {
+	if span.SpanKind() != apitrace.SpanKindUnspecified {
 		numAttrs++
 	}
 
 	// Status of Ok and Unset are not considered errors.
-	isError := span.StatusCode == codes.Error
+	isError := span.Status().Code == codes.Error
 	if isError {
 		numAttrs += 2
 	}
 
 	// Copy attributes to new value.
 	attrs := make(map[string]interface{}, numAttrs)
-	for iter := span.Resource.Iter(); iter.Next(); {
+	for iter := span.Resource().Iter(); iter.Next(); {
 		kv := iter.Label()
 		// Resource service name overrides the exporter.
 		if kv.Key == semconv.ServiceNameKey {
@@ -46,7 +46,7 @@ func Span(service string, span *trace.SpanSnapshot) telemetry.Span {
 		}
 		attrs[string(kv.Key)] = kv.Value.AsInterface()
 	}
-	for _, kv := range span.Attributes {
+	for _, kv := range span.Attributes() {
 		// Span service name overrides the Resource.
 		if kv.Key == semconv.ServiceNameKey {
 			serviceName = kv.Value.AsString()
@@ -54,8 +54,8 @@ func Span(service string, span *trace.SpanSnapshot) telemetry.Span {
 		attrs[string(kv.Key)] = kv.Value.AsInterface()
 	}
 
-	if span.SpanKind != apitrace.SpanKindUnspecified {
-		attrs["span.kind"] = strings.ToLower(span.SpanKind.String())
+	if span.SpanKind() != apitrace.SpanKindUnspecified {
+		attrs["span.kind"] = strings.ToLower(span.SpanKind().String())
 	}
 
 	// New Relic registered attributes to identify where this data came from.
@@ -63,22 +63,22 @@ func Span(service string, span *trace.SpanSnapshot) telemetry.Span {
 	attrs[collectorNameAttrKey] = collectorNameAttrValue
 
 	if isError {
-		attrs[errorCodeAttrKey] = uint32(span.StatusCode)
-		attrs[errorMessageAttrKey] = span.StatusMessage
+		attrs[errorCodeAttrKey] = uint32(span.Status().Code)
+		attrs[errorMessageAttrKey] = span.Status().Description
 	}
 
 	parentSpanID := ""
-	if span.Parent.SpanID().IsValid() {
-		parentSpanID = span.Parent.SpanID().String()
+	if span.Parent().SpanID().IsValid() {
+		parentSpanID = span.Parent().SpanID().String()
 	}
 
 	return telemetry.Span{
-		ID:          span.SpanContext.SpanID().String(),
-		TraceID:     span.SpanContext.TraceID().String(),
-		Timestamp:   span.StartTime,
-		Name:        span.Name,
+		ID:          span.SpanContext().SpanID().String(),
+		TraceID:     span.SpanContext().TraceID().String(),
+		Timestamp:   span.StartTime(),
+		Name:        span.Name(),
 		ParentID:    parentSpanID,
-		Duration:    span.EndTime.Sub(span.StartTime),
+		Duration:    span.EndTime().Sub(span.StartTime()),
 		ServiceName: serviceName,
 		Attributes:  attrs,
 	}

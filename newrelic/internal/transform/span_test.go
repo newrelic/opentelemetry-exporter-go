@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/sdk/resource"
 	exporttrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -33,12 +34,12 @@ func TestTransformSpans(t *testing.T) {
 	now := time.Now()
 	testcases := []struct {
 		testname string
-		input    *exporttrace.SpanSnapshot
+		input    *tracetest.SpanStub
 		expect   telemetry.Span
 	}{
 		{
 			testname: "basic span",
-			input: &exporttrace.SpanSnapshot{
+			input: &tracetest.SpanStub{
 				SpanContext: trace.NewSpanContext(trace.SpanContextConfig{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -62,7 +63,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with parent",
-			input: &exporttrace.SpanSnapshot{
+			input: &tracetest.SpanStub{
 				SpanContext: trace.NewSpanContext(trace.SpanContextConfig{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -91,16 +92,18 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with error",
-			input: &exporttrace.SpanSnapshot{
+			input: &tracetest.SpanStub{
 				SpanContext: trace.NewSpanContext(trace.SpanContextConfig{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
 				}),
-				StatusCode:    codes.Error,
-				StatusMessage: "ResourceExhausted",
-				StartTime:     now,
-				EndTime:       now.Add(2 * time.Second),
-				Name:          "mySpan",
+				Status: exporttrace.Status{
+					Code:        codes.Error,
+					Description: "ResourceExhausted",
+				},
+				StartTime: now,
+				EndTime:   now.Add(2 * time.Second),
+				Name:      "mySpan",
 			},
 			expect: telemetry.Span{
 				Name:        "mySpan",
@@ -119,7 +122,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with attributes",
-			input: &exporttrace.SpanSnapshot{
+			input: &tracetest.SpanStub{
 				SpanContext: trace.NewSpanContext(trace.SpanContextConfig{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -155,16 +158,18 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with attributes and error",
-			input: &exporttrace.SpanSnapshot{
+			input: &tracetest.SpanStub{
 				SpanContext: trace.NewSpanContext(trace.SpanContextConfig{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
 				}),
-				StatusCode:    codes.Error,
-				StatusMessage: "ResourceExhausted",
-				StartTime:     now,
-				EndTime:       now.Add(2 * time.Second),
-				Name:          "mySpan",
+				Status: exporttrace.Status{
+					Code:        codes.Error,
+					Description: "ResourceExhausted",
+				},
+				StartTime: now,
+				EndTime:   now.Add(2 * time.Second),
+				Name:      "mySpan",
 				Attributes: []attribute.KeyValue{
 					attribute.Bool("x0", true),
 				},
@@ -187,7 +192,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with service name in resource",
-			input: &exporttrace.SpanSnapshot{
+			input: &tracetest.SpanStub{
 				SpanContext: trace.NewSpanContext(trace.SpanContextConfig{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -195,7 +200,7 @@ func TestTransformSpans(t *testing.T) {
 				StartTime: now,
 				EndTime:   now.Add(2 * time.Second),
 				Name:      "mySpan",
-				Resource: resource.NewWithAttributes(
+				Resource: resource.NewSchemaless(
 					attribute.String("service.name", "resource service"),
 				),
 			},
@@ -215,7 +220,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with a kind",
-			input: &exporttrace.SpanSnapshot{
+			input: &tracetest.SpanStub{
 				SpanContext: trace.NewSpanContext(trace.SpanContextConfig{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -224,7 +229,7 @@ func TestTransformSpans(t *testing.T) {
 				StartTime: now,
 				EndTime:   now.Add(2 * time.Second),
 				Name:      "mySpan",
-				Resource: resource.NewWithAttributes(
+				Resource: resource.NewSchemaless(
 					attribute.String("service.name", "resource service"),
 				),
 			},
@@ -245,7 +250,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 		{
 			testname: "span with service name in attributes",
-			input: &exporttrace.SpanSnapshot{
+			input: &tracetest.SpanStub{
 				SpanContext: trace.NewSpanContext(trace.SpanContextConfig{
 					TraceID: sampleTraceID,
 					SpanID:  sampleSpanID,
@@ -253,7 +258,7 @@ func TestTransformSpans(t *testing.T) {
 				StartTime: now,
 				EndTime:   now.Add(2 * time.Second),
 				Name:      "mySpan",
-				Resource: resource.NewWithAttributes(
+				Resource: resource.NewSchemaless(
 					attribute.String("service.name", "resource service"),
 				),
 				Attributes: []attribute.KeyValue{
@@ -276,7 +281,7 @@ func TestTransformSpans(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		if got := Span(service, tc.input); !reflect.DeepEqual(got, tc.expect) {
+		if got := Span(service, tc.input.Snapshot()); !reflect.DeepEqual(got, tc.expect) {
 			t.Errorf("%s: %#v != %#v", tc.testname, got, tc.expect)
 		}
 	}

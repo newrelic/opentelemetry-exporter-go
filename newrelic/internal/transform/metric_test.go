@@ -14,11 +14,11 @@ import (
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/unit"
 	metricsdk "go.opentelemetry.io/otel/sdk/export/metric"
 	"go.opentelemetry.io/otel/sdk/metric/aggregator/minmaxsumcount"
 	sumAgg "go.opentelemetry.io/otel/sdk/metric/aggregator/sum"
 	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/unit"
 )
 
 var defaultAttrs = map[string]string{
@@ -41,13 +41,13 @@ func TestServiceNameAttributes(t *testing.T) {
 		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
 	}
 
-	r := resource.NewWithAttributes(attribute.String("service.name", want))
+	r := resource.NewSchemaless(attribute.String("service.name", want))
 	attrs = attributes(wrong, r, nil, nil)
 	if got, ok := attrs[serviceNameAttrKey]; !ok || got != want {
 		t.Errorf("service.name attribute wrong: got %q, want %q", got, want)
 	}
 
-	r = resource.NewWithAttributes(attribute.String("service.name", wrong))
+	r = resource.NewSchemaless(attribute.String("service.name", wrong))
 	l := attribute.NewSet(attribute.String("service.name", want))
 	attrs = attributes(wrong, r, nil, &l)
 	if got, ok := attrs[serviceNameAttrKey]; !ok || got != want {
@@ -64,7 +64,7 @@ func TestAttributes(t *testing.T) {
 	}{
 		{}, // test defaults
 		{
-			res:    resource.NewWithAttributes(attribute.String("A", "a")),
+			res:    resource.NewSchemaless(attribute.String("A", "a")),
 			opts:   nil,
 			labels: nil,
 			want: map[string]interface{}{
@@ -72,7 +72,7 @@ func TestAttributes(t *testing.T) {
 			},
 		},
 		{
-			res:    resource.NewWithAttributes(attribute.String("A", "a"), attribute.Int64("1", 1)),
+			res:    resource.NewSchemaless(attribute.String("A", "a"), attribute.Int64("1", 1)),
 			opts:   nil,
 			labels: nil,
 			want: map[string]interface{}{
@@ -114,7 +114,7 @@ func TestAttributes(t *testing.T) {
 			},
 		},
 		{
-			res: resource.NewWithAttributes(attribute.String("K1", "V1"), attribute.String("K2", "V2")),
+			res: resource.NewSchemaless(attribute.String("K1", "V1"), attribute.String("K2", "V2")),
 			opts: []metric.InstrumentOption{
 				metric.WithUnit(unit.Milliseconds),
 				metric.WithDescription("d3"),
