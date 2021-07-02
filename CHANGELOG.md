@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- Upgraded `go.opentelemetry.io/otel*` dependencies to v1.0.0-RC1/v0.21.0. ([#98](https://github.com/newrelic/opentelemetry-exporter-go/pull/98))
+
 ## [0.20.0] - 2021-05-26
 
 ### Changed
