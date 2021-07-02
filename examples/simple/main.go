@@ -36,7 +36,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -71,7 +71,7 @@ func main() {
 	defer exporter.Shutdown(ctx)
 
 	// Minimally default resource with a service name
-	r := resource.NewWithAttributes(semconv.ServiceNameKey.String(serviceName))
+	r := resource.NewSchemaless(semconv.ServiceNameKey.String(serviceName))
 
 	// Create a tracer provider
 	bsp := sdktrace.NewBatchSpanProcessor(exporter)
@@ -126,10 +126,11 @@ func main() {
 
 	// Create a trace and some measurements
 	tracer := otel.Tracer("ex.com/basic")
-	ctx = baggage.ContextWithValues(ctx,
-		fooKey.String("foo1"),
-		barKey.String("bar1"),
-	)
+
+	m0, _ := baggage.NewMember(string(fooKey), "foo1")
+	m1, _ := baggage.NewMember(string(barKey), "bar1")
+	b, _ := baggage.New(m0, m1)
+	ctx = baggage.ContextWithBaggage(ctx, b)
 
 	func(ctx context.Context) {
 		var span trace.Span
@@ -140,9 +141,11 @@ func main() {
 		span.AddEvent("Nice operation!", trace.WithAttributes(attribute.Int("bogons", 100)))
 		span.SetAttributes(anotherKey.String("yes"))
 
+		ak, _ := baggage.NewMember(string(anotherKey), "xyz")
+		b, _ = baggage.New(ak)
 		meter.RecordBatch(
 			// Note: call-site variables added as context Entries:
-			baggage.ContextWithValues(ctx, anotherKey.String("xyz")),
+			baggage.ContextWithBaggage(ctx, b),
 			commonLabels,
 
 			valueRecorder.Measurement(2.0),

@@ -19,7 +19,7 @@ import (
 	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/semconv"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/newrelic/newrelic-telemetry-sdk-go/telemetry"
@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	version          = "0.20.0"
+	version          = "0.21.0"
 	userAgentProduct = "NewRelic-Go-OpenTelemetry"
 )
 
@@ -109,7 +109,7 @@ func NewExportPipeline(service string, traceOpt []sdktrace.TracerProviderOption,
 
 	// Minimally default resource with a service name. This is overwritten if
 	// another is passed in traceOpt or pushOpt.
-	r := resource.NewWithAttributes(semconv.ServiceNameKey.String(service))
+	r := resource.NewSchemaless(semconv.ServiceNameKey.String(service))
 
 	tp := sdktrace.NewTracerProvider(
 		append([]sdktrace.TracerProviderOption{
@@ -167,7 +167,7 @@ var (
 )
 
 // ExportSpans exports span data to New Relic.
-func (e *Exporter) ExportSpans(ctx context.Context, spans []*sdktrace.SpanSnapshot) error {
+func (e *Exporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnlySpan) error {
 	if nil == e {
 		return nil
 	}

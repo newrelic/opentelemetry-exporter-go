@@ -25,7 +25,8 @@ import (
 	selector "go.opentelemetry.io/otel/sdk/metric/selector/simple"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
 func TestServiceNameMissing(t *testing.T) {
@@ -39,10 +40,10 @@ func TestServiceNameMissing(t *testing.T) {
 }
 
 func TestNilExporter(t *testing.T) {
-	span := &trace.SpanSnapshot{}
+	span := &tracetest.SpanStub{}
 	var e *Exporter
 
-	e.ExportSpans(context.Background(), []*trace.SpanSnapshot{span})
+	e.ExportSpans(context.Background(), []trace.ReadOnlySpan{span.Snapshot()})
 }
 
 // MockTransport caches decompressed request bodies
@@ -153,7 +154,7 @@ func TestEndToEndTracer(t *testing.T) {
 		t.Fatalf("failed to instantiate exporter: %v", err)
 	}
 
-	r := resource.NewWithAttributes(semconv.ServiceNameKey.String(serviceName))
+	r := resource.NewSchemaless(semconv.ServiceNameKey.String(serviceName))
 	tracerProvider := trace.NewTracerProvider(
 		trace.WithBatcher(e, trace.WithBatchTimeout(15), trace.WithMaxExportBatchSize(10)),
 		trace.WithResource(r),

@@ -17,7 +17,7 @@ import (
 	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
 func ExampleNewExporter() {
@@ -39,7 +39,7 @@ func ExampleNewExporter() {
 
 func ExampleNewExportPipeline() {
 	// Include environment in resource.
-	r := resource.NewWithAttributes(
+	r := resource.NewSchemaless(
 		attribute.String("environment", "production"),
 		semconv.ServiceNameKey.String("My Service"),
 	)
